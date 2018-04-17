@@ -8,6 +8,7 @@
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
+#include "spline.h"
 
 using namespace std;
 
@@ -240,17 +241,97 @@ int main() {
           	vector<double> next_x_vals;
           	vector<double> next_y_vals;
 
-
           	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
+
+            double pos_x;
+            double pos_y;
+            double angle;
+            int path_size = previous_path_x.size();
+
+            for (int i=0; i<path_size; ++i)
+            {
+              next_x_vals.push_back(previous_path_x[i]);
+              next_y_vals.push_back(previous_path_y[i]);
+            }
+
 
             // 50mph = 0.447m/s
             double dist_inc = 0.447;
             
+            if(path_size == 0)
+            {
+              pos_x = car_x;
+              pos_y = car_y;
+              angle = deg2rad(car_yaw);
+            }
+            else
+            {
+              pos_x = previous_path_x[path_size-1];
+              pos_y = previous_path_y[path_size-1];
+
+              double pos_x2 = previous_path_x[path_size-2];
+              double pos_y2 = previous_path_y[path_size-2];
+              angle = atan2(pos_y-pos_y2,pos_x-pos_x2);
+            }
+
+            /*
+            // Drive in a straight line:
             for(int i = 0; i < 50; i++)
             {
-              next_x_vals.push_back(car_x+(dist_inc*i)*cos(deg2rad(car_yaw)));
-              next_y_vals.push_back(car_y+(dist_inc*i)*sin(deg2rad(car_yaw)));
+                  next_x_vals.push_back(car_x+(dist_inc*i)*cos(deg2rad(car_yaw)));
+                  next_y_vals.push_back(car_y+(dist_inc*i)*sin(deg2rad(car_yaw)));
             }
+            */
+
+            /*
+            // Drive in a circle:
+            for(int i = 0; i < 50-path_size; i++)
+            {
+              next_x_vals.push_back(pos_x+(dist_inc)*cos(angle+(i+1)*(pi()/100)));
+              next_y_vals.push_back(pos_y+(dist_inc)*sin(angle+(i+1)*(pi()/100)));
+              pos_x += (dist_inc) * cos(angle+(i+1)*(pi()/100));
+              pos_y += (dist_inc) * sin(angle+(i+1)*(pi()/100));
+            }*/
+
+            int lane = 0;
+            // Drive along the lane:
+            for(int i=0; i<50-path_size; i++)
+            {
+              vector<double> tmp = getFrenet(pos_x, pos_y, angle, map_waypoints_x, map_waypoints_y);
+              vector<double> tmp2 = getXY(tmp[0]+i, 4*lane+2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+
+              next_x_vals.push_back(tmp2[0]);
+              next_y_vals.push_back(tmp2[1]);
+            }
+
+
+            // sensor_fusion data format: []
+            for (int i=0; i< sensor_fusion.size(); ++i)
+            {
+              float d = sensor_fusion[i][6];
+
+              // Check if target vehicle is on the same lane
+              if ( d>(4*lane) && d<(4*lane+4) )
+              {
+                double target_vx = sensor_fusion[i][3];
+                double target_vy = sensor_fusion[i][4];
+                double target_speed = sqrt(target_vx*target_vx+target_vy*target_vy);
+                double target_s = sensor_fusion[i][5];
+
+                // Check is target vehicle is on collision course
+                if ( (target_s - ego_s)<30 && target_s>ego_s)
+                {
+                  // Crash mitigation logic here!
+
+                  ref_vel = 29.5;
+                }
+
+
+              }
+            }
+
+
+
 
 
 
