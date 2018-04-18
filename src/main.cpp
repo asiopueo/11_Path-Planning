@@ -162,6 +162,34 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
 	return {x,y};
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 int main() {
   uWS::Hub h;
 
@@ -241,7 +269,9 @@ int main() {
           	vector<double> next_x_vals;
           	vector<double> next_y_vals;
 
-          	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
+            // TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
+
+            int lane = 0;
 
             double pos_x;
             double pos_y;
@@ -253,7 +283,6 @@ int main() {
               next_x_vals.push_back(previous_path_x[i]);
               next_y_vals.push_back(previous_path_y[i]);
             }
-
 
             // 50mph = 0.447m/s
             double dist_inc = 0.447;
@@ -274,6 +303,98 @@ int main() {
               angle = atan2(pos_y-pos_y2,pos_x-pos_x2);
             }
 
+
+            // Define anchor points here:
+            vector<double> anchor_x_vals(3);
+            vector<double> anchor_y_vals(3);
+            vector<double> egoFrenet = getFrenet(pos_x, pos_y, angle, map_waypoints_x, map_waypoints_y);
+            
+            // Define "anchor waypoints" 30, 60, and 90 meters in front of the car:
+            vector<double> tmp = getXY(egoFrenet[0]+30, 4*lane+2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+            anchor_x_vals.push_back( tmp[0] );
+            anchor_y_vals.push_back( tmp[1] );
+            tmp = getXY(egoFrenet[0]+60, 4*lane+2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+            anchor_x_vals.push_back( tmp[0] );
+            anchor_y_vals.push_back( tmp[1] );
+            tmp = getXY(egoFrenet[0]+90, 4*lane+2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+            anchor_x_vals.push_back( tmp[0] );
+            anchor_y_vals.push_back( tmp[1] );
+
+
+
+            // Coordinate transformation (global->vehicle):
+            Eigen::MatrixXd rotation = Eigen::MatrixXd(3,3);
+            Eigen::MatrixXd translation = Eigen::MatrixXd(3,3);
+
+            rotation << cos(angle), sin(angle), 0,
+                        sin(angle), cos(angle), 0,
+                        0, 0, 1;
+
+            double t_x = 0.;
+            double t_y = 0.;
+
+            translation << 1, 0, -t_x,
+                           0, 1, -t_y,
+                           0, 0, 1;
+
+            vector<double> X(3);
+            vector<double> Y(3);
+
+            for (int i=0; i<3; i++)
+            {
+              Eigen::VectorXd input(3), output(3);
+              
+              input << anchor_x_vals[i], anchor_y_vals[i], 1;
+              output = rotation*translation*input;
+
+              X.push_back(output(0));
+              Y.push_back(output(1));
+            }
+
+
+
+            // Calculate splines:
+            tk::spline spl;
+            spl.set_points(X,Y);
+
+
+            
+            // Drive along the spline:
+            for(int i=0; i<50-path_size; i++)
+            {
+              dist = distance(pos_x, pos_y, anchor_x, anchor_y);
+              N = dist/speed;
+
+              y = spl(x);
+
+
+              // Transform back into global coordinate system (vehicle->global):
+              Eigen::VectorXd input(3), output(3);
+              Eigen::MatrixXd rotation = Eigen::MatrixXd(3,3);
+              Eigen::MatrixXd translation = Eigen::MatrixXd(3,3);
+
+              rotation << cos(angle), -sin(angle), 0,
+                          sin(angle), cos(angle), 0,
+                          0, 0, 1;
+
+              double t_x = 0.;
+              double t_y = 0.;
+
+              translation << 1, 0, t_x,
+                             0, 1, t_y,
+                             0, 0, 1;
+
+              input << tmpX[i], tmpY[i], 1;
+              output = rotation*translation*input;
+
+              next_x_vals.push_back(output[0]);
+              next_y_vals.push_back(output[1]);
+            }
+
+
+
+
+
             /*
             // Drive in a straight line:
             for(int i = 0; i < 50; i++)
@@ -292,17 +413,36 @@ int main() {
               pos_x += (dist_inc) * cos(angle+(i+1)*(pi()/100));
               pos_y += (dist_inc) * sin(angle+(i+1)*(pi()/100));
             }*/
-
-            int lane = 0;
+            /*
             // Drive along the lane:
             for(int i=0; i<50-path_size; i++)
             {
-              vector<double> tmp = getFrenet(pos_x, pos_y, angle, map_waypoints_x, map_waypoints_y);
-              vector<double> tmp2 = getXY(tmp[0]+i, 4*lane+2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+              vector<double> tmpXY = getXY(egoFrenet[0]+i, 4*lane+2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
 
-              next_x_vals.push_back(tmp2[0]);
-              next_y_vals.push_back(tmp2[1]);
+              next_x_vals.push_back(tmpXY[0]);
+              next_y_vals.push_back(tmpXY[1]);
             }
+            */
+
+
+
+
+            // Define state machine here:
+            //enum state = {a, b};
+
+
+
+
+
+
+            
+
+
+
+
+
+
+            
 
 
             // sensor_fusion data format: []
@@ -319,11 +459,11 @@ int main() {
                 double target_s = sensor_fusion[i][5];
 
                 // Check is target vehicle is on collision course
-                if ( (target_s - ego_s)<30 && target_s>ego_s)
+                if ( (target_s - egoFrenet[0])<30 && target_s>egoFrenet[0])
                 {
                   // Crash mitigation logic here!
 
-                  ref_vel = 29.5;
+                  double ref_vel = 29.5;
                 }
 
 
