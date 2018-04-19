@@ -5,10 +5,12 @@
 #include <iostream>
 #include <thread>
 #include <vector>
-#include "Eigen-3.3/Eigen/Core"
-#include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
 #include "spline.h"
+
+// State Machine for Ego-vehicle behavior
+#include "statemachine.h"
+
 
 using namespace std;
 
@@ -174,24 +176,10 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 int main() {
   uWS::Hub h;
+  pose ego_pose;
+  StateMachine::StateMachine state_machine;
 
   // Load up map values for waypoint's x,y,s and d normalized normal vectors
   vector<double> map_waypoints_x;
@@ -271,11 +259,7 @@ int main() {
 
             // TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
 
-            int lane = 0;
-
-            double pos_x;
-            double pos_y;
-            double angle;
+         
             int path_size = previous_path_x.size();
 
             for (int i=0; i<path_size; ++i)
@@ -285,114 +269,31 @@ int main() {
             }
 
             // 50mph = 0.447m/s
-            double dist_inc = 0.447;
+            const double dist_inc = 0.447;
             
             if(path_size == 0)
             {
-              pos_x = car_x;
-              pos_y = car_y;
-              angle = deg2rad(car_yaw);
+              ego_pose.pos_x = car_x;
+              ego_pose.pos_y = car_y;
+              ego_pose.angle = deg2rad(car_yaw);
             }
             else
             {
-              pos_x = previous_path_x[path_size-1];
-              pos_y = previous_path_y[path_size-1];
+              ego_pose.pos_x = previous_path_x[path_size-1];
+              ego_pose.pos_y = previous_path_y[path_size-1];
 
               double pos_x2 = previous_path_x[path_size-2];
               double pos_y2 = previous_path_y[path_size-2];
-              angle = atan2(pos_y-pos_y2,pos_x-pos_x2);
-            }
-
-
-            // Define anchor points here:
-            vector<double> anchor_x_vals(3);
-            vector<double> anchor_y_vals(3);
-            vector<double> egoFrenet = getFrenet(pos_x, pos_y, angle, map_waypoints_x, map_waypoints_y);
-            
-            // Define "anchor waypoints" 30, 60, and 90 meters in front of the car:
-            vector<double> tmp = getXY(egoFrenet[0]+30, 4*lane+2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-            anchor_x_vals.push_back( tmp[0] );
-            anchor_y_vals.push_back( tmp[1] );
-            tmp = getXY(egoFrenet[0]+60, 4*lane+2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-            anchor_x_vals.push_back( tmp[0] );
-            anchor_y_vals.push_back( tmp[1] );
-            tmp = getXY(egoFrenet[0]+90, 4*lane+2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-            anchor_x_vals.push_back( tmp[0] );
-            anchor_y_vals.push_back( tmp[1] );
-
-
-
-            // Coordinate transformation (global->vehicle):
-            Eigen::MatrixXd rotation = Eigen::MatrixXd(3,3);
-            Eigen::MatrixXd translation = Eigen::MatrixXd(3,3);
-
-            rotation << cos(angle), sin(angle), 0,
-                        sin(angle), cos(angle), 0,
-                        0, 0, 1;
-
-            double t_x = 0.;
-            double t_y = 0.;
-
-            translation << 1, 0, -t_x,
-                           0, 1, -t_y,
-                           0, 0, 1;
-
-            vector<double> X(3);
-            vector<double> Y(3);
-
-            for (int i=0; i<3; i++)
-            {
-              Eigen::VectorXd input(3), output(3);
-              
-              input << anchor_x_vals[i], anchor_y_vals[i], 1;
-              output = rotation*translation*input;
-
-              X.push_back(output(0));
-              Y.push_back(output(1));
+              ego_pose.angle = atan2(pos_y-pos_y2,pos_x-pos_x2);
             }
 
 
 
-            // Calculate splines:
-            tk::spline spl;
-            spl.set_points(X,Y);
+            state_machine.evaluate_behavior(ego_pose, sensor_fusion);
+            state_machine.execute_state_transition();
 
-
-            
-            // Drive along the spline:
-            for(int i=0; i<50-path_size; i++)
-            {
-              dist = distance(pos_x, pos_y, anchor_x, anchor_y);
-              N = dist/speed;
-
-              y = spl(x);
-
-
-              // Transform back into global coordinate system (vehicle->global):
-              Eigen::VectorXd input(3), output(3);
-              Eigen::MatrixXd rotation = Eigen::MatrixXd(3,3);
-              Eigen::MatrixXd translation = Eigen::MatrixXd(3,3);
-
-              rotation << cos(angle), -sin(angle), 0,
-                          sin(angle), cos(angle), 0,
-                          0, 0, 1;
-
-              double t_x = 0.;
-              double t_y = 0.;
-
-              translation << 1, 0, t_x,
-                             0, 1, t_y,
-                             0, 0, 1;
-
-              input << tmpX[i], tmpY[i], 1;
-              output = rotation*translation*input;
-
-              next_x_vals.push_back(output[0]);
-              next_y_vals.push_back(output[1]);
-            }
-
-
-
+            next_x_vals = ;
+            next_y_vals = ;
 
 
             /*
@@ -423,54 +324,6 @@ int main() {
               next_y_vals.push_back(tmpXY[1]);
             }
             */
-
-
-
-
-            // Define state machine here:
-            //enum state = {a, b};
-
-
-
-
-
-
-            
-
-
-
-
-
-
-            
-
-
-            // sensor_fusion data format: []
-            for (int i=0; i< sensor_fusion.size(); ++i)
-            {
-              float d = sensor_fusion[i][6];
-
-              // Check if target vehicle is on the same lane
-              if ( d>(4*lane) && d<(4*lane+4) )
-              {
-                double target_vx = sensor_fusion[i][3];
-                double target_vy = sensor_fusion[i][4];
-                double target_speed = sqrt(target_vx*target_vx+target_vy*target_vy);
-                double target_s = sensor_fusion[i][5];
-
-                // Check is target vehicle is on collision course
-                if ( (target_s - egoFrenet[0])<30 && target_s>egoFrenet[0])
-                {
-                  // Crash mitigation logic here!
-
-                  double ref_vel = 29.5;
-                }
-
-
-              }
-            }
-
-
 
 
 
