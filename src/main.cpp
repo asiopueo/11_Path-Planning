@@ -9,6 +9,7 @@
 #include "spline.h"
 
 // State Machine for Ego-vehicle behavior
+#include "common.h"
 #include "statemachine.h"
 
 
@@ -179,7 +180,7 @@ vector<double> getXY(double s, double d, const vector<double> &maps_s, const vec
 int main() {
   uWS::Hub h;
   pose ego_pose;
-  StateMachine::StateMachine state_machine;
+  StateMachine state_machine;
 
   // Load up map values for waypoint's x,y,s and d normalized normal vectors
   vector<double> map_waypoints_x;
@@ -215,7 +216,7 @@ int main() {
   	map_waypoints_dy.push_back(d_y);
   }
 
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy, &ego_pose, &state_machine](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -284,16 +285,16 @@ int main() {
 
               double pos_x2 = previous_path_x[path_size-2];
               double pos_y2 = previous_path_y[path_size-2];
-              ego_pose.angle = atan2(pos_y-pos_y2,pos_x-pos_x2);
+              ego_pose.angle = atan2(ego_pose.pos_y-pos_y2,ego_pose.pos_x-pos_x2);
             }
 
 
 
-            state_machine.evaluate_behavior(ego_pose, sensor_fusion);
-            state_machine.execute_state_transition();
+            //state_machine.evaluate_behavior(ego_pose, sensor_fusion);
+            //state_machine.execute_state_transition();
 
-            next_x_vals = ;
-            next_y_vals = ;
+            //next_x_vals = ;
+            //next_y_vals = ;
 
 
             /*

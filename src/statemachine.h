@@ -3,20 +3,15 @@
 
 #include <climits>
 #include <map>
+#include <cmath>
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
+#include "common.h"
 
 
-/*
- * STAY:  Stay on current lane
- * PLCL:  Prepare Lane Change Left
- * PLCR:  Prepare Lane Change Right
- * LCL:   Lane Change Left
- * LCR:   Lane Change Right
- */
 
 
-enum state {STAY, PLCL, PLCR, LCL, LCR};
+
 
 
 class StateMachine {
@@ -26,15 +21,18 @@ class StateMachine {
 		~StateMachine();
 
 		// method which evaluates behaviour
-		void evaluate_situation(, );
+		void evaluate_behavior(pose, auto predictions);
 		void execute_state_transition();
+		vector<vector<double>> generate_trajectory(state, pose, auto vehicle_list);
 
 	private:
 		state current_state;
 		state best_next_state;
-		map<vector<state>> possible_successor_states;
+		map<state, state> possible_successor_states;
 
-		vector<vector<double>> generate_trajectory(state, pose, vehicle_list);
+		double weight_1, weight_2;
+
+		//vector<vector<double>> generate_trajectory(state, pose, vehicle_list);
 		
 		double cost_function_1();
 		double cost_function_2();
