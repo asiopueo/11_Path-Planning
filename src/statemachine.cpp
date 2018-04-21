@@ -48,13 +48,13 @@ vector<vector<double>> StateMachine::generate_trajectory(state proposed_state, p
 		    anchor_vals[1].push_back( ego_veh.pos_y );
 
 		    vector<double> tmp(2);
-		    tmp = maptool.getXY(egoFrenet[0]+20, 4*ego_veh.lane+2);
-		    anchor_vals[0].push_back( tmp[0] );
-		    anchor_vals[1].push_back( tmp[1] );
-		    tmp = maptool.getXY(egoFrenet[0]+40, 4*ego_veh.lane+2);
+		    tmp = maptool.getXY(egoFrenet[0]+30, 4*ego_veh.lane+2);
 		    anchor_vals[0].push_back( tmp[0] );
 		    anchor_vals[1].push_back( tmp[1] );
 		    tmp = maptool.getXY(egoFrenet[0]+60, 4*ego_veh.lane+2);
+		    anchor_vals[0].push_back( tmp[0] );
+		    anchor_vals[1].push_back( tmp[1] );
+		    tmp = maptool.getXY(egoFrenet[0]+90, 4*ego_veh.lane+2);
 		    anchor_vals[0].push_back( tmp[0] );
 		    anchor_vals[1].push_back( tmp[1] );
 
@@ -70,7 +70,7 @@ vector<vector<double>> StateMachine::generate_trajectory(state proposed_state, p
 		    spl.set_points(anchor_vals[0], anchor_vals[1]);
 		    
 		    // Generate trajectory:
-		    const double dist_inc = 0.447;
+		    const double dist_inc = 0.427;
 			double dist = distance(0, 0, 30, spl(30));
 		    
 		    int N = int (dist / dist_inc);
@@ -150,15 +150,15 @@ std::vector<std::vector<double>> StateMachine::evaluate_behavior(pose ego_pose, 
     //for(state_iter : successor_states[current_state])
     {
     	projected_trajectory = generate_trajectory(LK, ego_pose, vehicle_list);
-	    /*    double cost_for_state = 0;
+	    
+	    double cost_for_state = 0;
+        //cost_for_state += weight_1 * cost_function_1(projected_trajectory, vehicle_list);
+	    //cost_for_state += weight_2 * cost_function_2(projected_trajectory, predictions);
 
-	        cost_for_state += weight_1 * cost_function_1(projected_trajectory, predictions);
-	        //cost_for_state += weight_2 * cost_function_2(projected_trajectory, predictions);
+        //costs.insert(std::make_pair(state_iter, cost_for_state));
+	    
 
-	        costs.insert(std::make_pair(state_iter, cost_for_state));
-	    }
-
-	    for(auto iter : possible_successor_states[current_state]) 
+	    /*for(auto iter : possible_successor_states[current_state]) 
 	    {
 	        if(costs[iter] < min_cost) {
 	            min_cost = costs[iter];
