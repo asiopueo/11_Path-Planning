@@ -12,7 +12,8 @@ using namespace std;
  * LCL:   Lane Change Left
  * LCR:   Lane Change Right
  */
-enum state {LK, PLCL, PLCR, LCL, LCR};
+
+enum state {LK, PLCL, PLCR, LCL, LCR, EA};
 
 struct pose {
 	double pos_x;
@@ -23,8 +24,14 @@ struct pose {
 	unsigned int lane;
 };
 
+// For converting back and forth between radians and degrees.
+double deg2rad(double x);
+double rad2deg(double x);
+
+double distance(double x1, double y1, double x2, double y2);
+
 void global2vehicle(vector<vector<double>> &trajectory, pose ego_veh);
-void global2vehicle(vector<vector<double>> &trajectory, pose ego_veh);
+void vehicle2global(vector<vector<double>> &trajectory, pose ego_veh);
 
 
 

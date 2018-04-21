@@ -1,5 +1,8 @@
+#include <cmath>
 #include "statemachine.h"
-
+#include "maptool.h"
+#include "spline.h"
+#include <iostream>
 
 StateMachine::StateMachine()
 {
@@ -14,6 +17,8 @@ StateMachine::StateMachine()
 
 	weight_1 = 1.0;
 	weight_2 = 1.0;
+
+
 }
 
 StateMachine::~StateMachine()
@@ -28,51 +33,61 @@ void successor_states()
 
 
 
-vector<vector<double>> generate_trajectory(state proposed_state, pose ego_veh, auto target_vehicles)
+vector<vector<double>> StateMachine::generate_trajectory(state proposed_state, pose ego_veh, auto target_vehicles)
 {
 	switch(proposed_state)
 	{
 		case LK:
 			// Define anchor points here:
-		    vector<double> anchor_x_vals(3);
-		    vector<double> anchor_y_vals(3);
-		    //vector<double> egoFrenet = getFrenet(pos_x, pos_y, angle, map_waypoints_x, map_waypoints_y);
+		    vector<vector<double>> anchor_vals(2);
+		    vector<vector<double>> trajectory(2);
+		    vector<double> egoFrenet = maptool.getFrenet(ego_veh.pos_x, ego_veh.pos_y, ego_veh.angle);
 		    
 		    // Define "anchor waypoints" 30, 60, and 90 meters in front of the car:
-		    vector<double> tmp = getXY(ego_veh.s+30, 4*lane+2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-		    anchor_x_vals.push_back( tmp[0] );
-		    anchor_y_vals.push_back( tmp[1] );
-		    tmp = getXY(ego_veh.s+60, 4*lane+2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-		    anchor_x_vals.push_back( tmp[0] );
-		    anchor_y_vals.push_back( tmp[1] );
-		    tmp = getXY(ego_veh.s+90, 4*lane+2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-		    anchor_x_vals.push_back( tmp[0] );
-		    anchor_y_vals.push_back( tmp[1] );
+		    vector<double> tmp = maptool.getXY(ego_veh.s+30, 4*ego_veh.lane+2);
+		    anchor_vals[0].push_back( tmp[0] );
+		    anchor_vals[1].push_back( tmp[1] );
+		    tmp = maptool.getXY(ego_veh.s+60, 4*ego_veh.lane+2);
+		    anchor_vals[0].push_back( tmp[0] );
+		    anchor_vals[1].push_back( tmp[1] );
+		    tmp = maptool.getXY(ego_veh.s+90, 4*ego_veh.lane+2);
+		    anchor_vals[0].push_back( tmp[0] );
+		    anchor_vals[1].push_back( tmp[1] );
 
-		    //global2vehicle(trajectory, ego_veh);
+		    global2vehicle(anchor_vals, ego_veh);
 
 		    // Calculate splines:
-		    /*
 		    tk::spline spl;
-		    spl.set_points(X,Y);
+		    spl.set_points(anchor_vals[0], anchor_vals[1]);
 		    
 		    // Generate trajectory:
-		    for(int i=0; i<50-path_size; i++)
-		    {
-		      dist = distance(ego_veh.pos_x, ego_veh.pos_y, anchor_x, anchor_y);
-		      N = dist/speed;
-		      y = spl(x);
-		    }*/
+		    double dist_inc = 0.447;
 
-		    //vehicle2global(trajectory, ego_veh);
-		    
-		// case PLCL:
+			double dist = distance(ego_veh.pos_x, ego_veh.pos_y, anchor_vals[0][2], anchor_vals[1][2]);
 
-		// case LCL:
+		    for(int i=0; i<50; i++)
+		    {		      
+		      trajectory[0].push_back(i*dist/50);
+		      trajectory[1].push_back(spl(i*dist/50));
+		    }
 
-		// case PLCR:
+		    vehicle2global(trajectory, ego_veh);
+		    return trajectory;
 
-		// case LCR:
+		case PLCL:
+			;
+
+		case LCL:
+			;
+
+		case PLCR:
+			;
+
+		case LCR:
+			;
+
+		case EA:
+			;
 
 	}
 
@@ -80,7 +95,7 @@ vector<vector<double>> generate_trajectory(state proposed_state, pose ego_veh, a
 
 
 
-double cost_function_1(vector<vector<double>> trajectory)
+double StateMachine::cost_function_1(vector<vector<double>> trajectory)
 {
 	double cost;
 
@@ -94,7 +109,7 @@ double cost_function_1(vector<vector<double>> trajectory)
 
 
 
-double cost_function_2(vector<vector<double>> trajectory)
+double StateMachine::cost_function_2(vector<vector<double>> trajectory)
 {
 	double cost;
 
@@ -108,47 +123,16 @@ double cost_function_2(vector<vector<double>> trajectory)
 
 
 
-void StateMachine::evaluate_behavior(pose ego_veh, auto target_vehicles)
+void StateMachine::evaluate_behavior(pose ego_veh, vector<vector<double>> vehicle_list)
 {
 	state best_next_state;
     unsigned int min_cost = UINT_MAX;
     vector<vector<double>> projected_trajectory(2);
     map<state, double> costs;
 
-
-    // target_vehicle data format: []
-    for (int i=0; i< target_vehicles.size(); ++i)
-    {
-		double d = target_vehicles[i][6];
-
-		// Check if target vehicle is on the same lane
-		if ( d>(4*ego_veh.lane) && d<(4*ego_veh.lane+4) )
-		{
-			double target_vx = target_vehicles[i][3];
-			double target_vy = target_vehicles[i][4];
-			double target_speed = sqrt(target_vx*target_vx+target_vy*target_vy);
-			double target_s = target_vehicles[i][5];
-
-			// Check is target vehicle is on collision course
-			if ( (target_s - ego_veh.s)<30 && target_s>ego_veh.d)
-			{
-				// Crash mitigation logic here!
-
-				double ref_vel = 29.5;
-
-				generate_trajectory(LK, ego_veh, target_vehicles);
-
-
-
-
-			}
-		}
-     }
-
-
-
-
-
+    //cout << "Current state: " << current_state << endl;
+    for (auto iter : vehicle_list)
+    	cout << iter[0] << endl;
     /*for(state_iter : possible_successor_states[current_state])
     {
         projected_trajectory = generate_trajectory(state_iter, current_pose, predictions);
@@ -175,4 +159,22 @@ void StateMachine::execute_state_transition()
 }
 
 
+
+
+    /*
+        double d = sensor_fusion[i][6];
+        // Check if target vehicle is on the same lane
+        if ( d>(4*ego_pose.lane) && d<(4*ego_pose.lane+4) )
+        {
+            double target_s = sensor_fusion[i][5];
+            // Check is target vehicle is on collision course
+            if ( (target_s-ego_pose.s)<30 && target_s>ego_pose.d-30)
+            {
+                //double target_vx = sensor_fusion[i][3];
+                //double target_vy = sensor_fusion[i][4];
+                //double target_speed = sqrt(target_vx*target_vx+target_vy*target_vy);
+                vehicle_list.push_back(sensor_fusion[i]);
+            }
+        }
+    */
 
