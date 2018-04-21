@@ -19,8 +19,6 @@ struct pose {
 	double pos_x;
 	double pos_y;
 	double angle;
-	double s;
-	double d;
 	unsigned int lane;
 };
 

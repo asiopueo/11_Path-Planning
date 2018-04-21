@@ -27,7 +27,7 @@ class StateMachine {
 	private:
 		state current_state;
 		state best_next_state;
-		std::map<state, state> possible_successor_states;
+		std::map<state, state> successor_states;
 		int remaining_points;
 
 		double weight_1, weight_2;
