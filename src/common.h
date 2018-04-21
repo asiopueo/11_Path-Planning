@@ -30,8 +30,8 @@ double rad2deg(double x);
 
 double distance(double x1, double y1, double x2, double y2);
 
-void global2vehicle(vector<vector<double>> &trajectory, pose ego_veh);
-void vehicle2global(vector<vector<double>> &trajectory, pose ego_veh);
+void global2vehicle(vector<vector<double>>& trajectory, pose ego_veh);
+void vehicle2global(vector<vector<double>>& trajectory, pose ego_veh);
 
 
 

@@ -33,7 +33,7 @@ void successor_states()
 
 
 
-vector<vector<double>> StateMachine::generate_trajectory(state proposed_state, pose ego_veh, auto target_vehicles)
+vector<vector<double>> StateMachine::generate_trajectory(state proposed_state, pose ego_veh, vector<vector<double>> target_vehicles)
 {
 	switch(proposed_state)
 	{
@@ -44,37 +44,49 @@ vector<vector<double>> StateMachine::generate_trajectory(state proposed_state, p
 		    vector<double> egoFrenet = maptool.getFrenet(ego_veh.pos_x, ego_veh.pos_y, ego_veh.angle);
 		    
 		    // Define "anchor waypoints" 30, 60, and 90 meters in front of the car:
-		    vector<double> tmp = maptool.getXY(ego_veh.s+30, 4*ego_veh.lane+2);
+		    vector<double> tmp = maptool.getXY(egoFrenet[0], 4*ego_veh.lane+2);
 		    anchor_vals[0].push_back( tmp[0] );
 		    anchor_vals[1].push_back( tmp[1] );
-		    tmp = maptool.getXY(ego_veh.s+60, 4*ego_veh.lane+2);
+		    tmp = maptool.getXY(egoFrenet[0]+30, 4*ego_veh.lane+2);
 		    anchor_vals[0].push_back( tmp[0] );
 		    anchor_vals[1].push_back( tmp[1] );
-		    tmp = maptool.getXY(ego_veh.s+90, 4*ego_veh.lane+2);
+		    tmp = maptool.getXY(egoFrenet[0]+60, 4*ego_veh.lane+2);
+		    anchor_vals[0].push_back( tmp[0] );
+		    anchor_vals[1].push_back( tmp[1] );
+		    tmp = maptool.getXY(egoFrenet[0]+90, 4*ego_veh.lane+2);
 		    anchor_vals[0].push_back( tmp[0] );
 		    anchor_vals[1].push_back( tmp[1] );
 
+
+
 		    global2vehicle(anchor_vals, ego_veh);
+
+		    //for (int i=0; i<anchor_vals[0].size(); i++)
+            //    cout << "anchor_vals: " << anchor_vals[0][i] << "\t" << anchor_vals[1][i] << endl;
 
 		    // Calculate splines:
 		    tk::spline spl;
 		    spl.set_points(anchor_vals[0], anchor_vals[1]);
 		    
 		    // Generate trajectory:
-		    double dist_inc = 0.447;
+		    const double dist_inc = 0.447;
+			double dist = distance(0, 0, 0, spl(30));
+		    
+		    double N = dist / dist_inc;
+		    cout << "spl: " << spl(30) << endl;
 
-			double dist = distance(ego_veh.pos_x, ego_veh.pos_y, anchor_vals[0][2], anchor_vals[1][2]);
-
-		    for(int i=0; i<50; i++)
+		    for(int i=0; i<50-remaining_points; i++)
 		    {		      
-		      trajectory[0].push_back(i*dist/50);
-		      trajectory[1].push_back(spl(i*dist/50));
+				trajectory[0].push_back(i);
+				trajectory[1].push_back(spl(i));
+				cout << i*(30.f/N) << "\t" << spl(i*(30.f/N)) << endl;
 		    }
 
 		    vehicle2global(trajectory, ego_veh);
+		    //cout << trajectory[0].size() << endl;
 		    return trajectory;
 
-		case PLCL:
+		/*case PLCL:
 			;
 
 		case LCL:
@@ -87,7 +99,7 @@ vector<vector<double>> StateMachine::generate_trajectory(state proposed_state, p
 			;
 
 		case EA:
-			;
+			;*/
 
 	}
 
@@ -123,20 +135,23 @@ double StateMachine::cost_function_2(vector<vector<double>> trajectory)
 
 
 
-void StateMachine::evaluate_behavior(pose ego_veh, vector<vector<double>> vehicle_list)
+std::vector<std::vector<double>> StateMachine::evaluate_behavior(pose ego_pose, vector<vector<double>> vehicle_list, int rest)
 {
 	state best_next_state;
+	remaining_points = rest;
     unsigned int min_cost = UINT_MAX;
+
     vector<vector<double>> projected_trajectory(2);
     map<state, double> costs;
 
     //cout << "Current state: " << current_state << endl;
-    for (auto iter : vehicle_list)
-    	cout << iter[0] << endl;
-    /*for(state_iter : possible_successor_states[current_state])
-    {
-        projected_trajectory = generate_trajectory(state_iter, current_pose, predictions);
-        double cost_for_state = 0;
+    //for (auto iter : vehicle_list)
+    //	cout << iter[0] << endl;
+    
+    //for(state_iter : possible_successor_states[current_state])
+    //{
+    projected_trajectory = generate_trajectory(LK, ego_pose, vehicle_list);
+    /*    double cost_for_state = 0;
 
         cost_for_state += weight_1 * cost_function_1(projected_trajectory, predictions);
         //cost_for_state += weight_2 * cost_function_2(projected_trajectory, predictions);
@@ -150,6 +165,7 @@ void StateMachine::evaluate_behavior(pose ego_veh, vector<vector<double>> vehicl
             best_next_state = state;
 		}
 	}*/
+	return projected_trajectory;
 }
 
 

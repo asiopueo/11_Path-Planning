@@ -20,14 +20,15 @@ class StateMachine {
 		~StateMachine();
 
 		// method which evaluates behaviour
-		void evaluate_behavior(pose ego_veh, vector<vector<double>> vehicle_list);
+		std::vector<std::vector<double>> evaluate_behavior(pose ego_veh, vector<vector<double>> vehicle_list, int);
 		void execute_state_transition();
-		std::vector<std::vector<double>> generate_trajectory(state, pose, auto vehicle_list);
+		std::vector<std::vector<double>> generate_trajectory(state, pose, std::vector<std::vector<double>> vehicle_list);
 
 	private:
 		state current_state;
 		state best_next_state;
 		std::map<state, state> possible_successor_states;
+		int remaining_points;
 
 		double weight_1, weight_2;
 

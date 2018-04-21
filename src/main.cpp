@@ -104,6 +104,9 @@ int main() {
                 ego_pose.pos_x = car_x;
                 ego_pose.pos_y = car_y;
                 ego_pose.angle = deg2rad(car_yaw);
+                ego_pose.s = car_s;
+                ego_pose.d = car_d;
+                ego_pose.lane = 1;
             }
             else
             {
@@ -126,9 +129,18 @@ int main() {
             }
 
 
+
+            
             // Let state machine decide what to do next:
-            state_machine.evaluate_behavior(ego_pose, vehicle_list);
+            auto traj = state_machine.evaluate_behavior(ego_pose, vehicle_list, path_size);
             //state_machine.execute_state_transition();
+            next_x_vals.insert(next_x_vals.end(), traj[0].begin(), traj[0].end());
+            next_y_vals.insert(next_y_vals.end(), traj[1].begin(), traj[1].end());
+
+
+            //for (int i=0; i<next_x_vals.size(); i++)
+            //    cout << next_x_vals[i] << "\t" << next_y_vals[i] << endl;
+            
 
           	msgJson["next_x"] = next_x_vals;
           	msgJson["next_y"] = next_y_vals;
