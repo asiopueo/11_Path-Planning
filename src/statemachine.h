@@ -29,6 +29,10 @@ class StateMachine {
 		state best_next_state;
 		std::map<state, state> successor_states;
 		int remaining_points;
+		double dist_inc;
+
+		unsigned int current_lane;
+		unsigned int intended_lane;
 
 		double weight_1, weight_2;
 

@@ -19,7 +19,8 @@ struct pose {
 	double pos_x;
 	double pos_y;
 	double angle;
-	unsigned int lane;
+	double s;
+	double d;
 };
 
 // For converting back and forth between radians and degrees.
