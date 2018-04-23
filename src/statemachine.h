@@ -3,8 +3,10 @@
 
 #include <climits>
 #include <map>
-#include "common.h"
+#include <vector>
 #include "maptool.h"
+#include "common.h"
+
 
 
 
@@ -29,7 +31,7 @@ class StateMachine {
 		~StateMachine();
 
 		// method which evaluates behaviour
-		std::vector<std::vector<double>> evaluate_behavior(pose ego_veh, vector<vector<double>> vehicle_list, int);
+		std::vector<std::vector<double>> evaluate_behavior(pose ego_veh, std::vector<std::vector<double>> vehicle_list, int);
 		void execute_state_transition();
 		std::vector<std::vector<double>> generate_trajectory(state, pose, std::vector<std::vector<double>> vehicle_list);
 
@@ -43,16 +45,16 @@ class StateMachine {
 		unsigned int current_lane;
 		unsigned int intended_lane;
 
-		std::map<state, vector<vector<double>>> associated_trajectories;
+		std::map<state, std::vector<std::vector<double>>> associated_trajectories;
 
-		vector<double> weights;
+		std::vector<double> weights;
 
 		Maptool maptool;
 
 		//vector<vector<double>> generate_trajectory(state, pose, vehicle_list);
 		
-		double cost_function_1(vector<vector<double>>, vector<vector<double>>);
-		double cost_function_2(vector<vector<double>>, vector<vector<double>>);
+		double cost_function_1(std::vector<std::vector<double>>, std::vector<std::vector<double>>);
+		double cost_function_2(std::vector<std::vector<double>>, std::vector<std::vector<double>>);
 };
 
 

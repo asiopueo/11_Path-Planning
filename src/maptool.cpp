@@ -1,10 +1,10 @@
-
-#include "maptool.h"
-#include "common.h"
 #include <cmath>
 #include <string>
 #include <fstream>
 #include <sstream>
+#include "maptool.h"
+#include "common.h"
+
 
 Maptool::Maptool()
 {
