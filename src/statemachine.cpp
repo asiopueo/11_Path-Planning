@@ -8,13 +8,17 @@
 StateMachine::StateMachine()
 {
 	current_state = LK;
-	successor_states[LK]=LK;
-	//successor_states["STAY"].push_back(PLCL);
-	//successor_states["STAY"].push_back(PLCR);
-	//successor_states["PLCL"].push_back();
-	//successor_states["SLCR"].push_back();
-	//successor_states["LCL"].push_back();
-	//successor_states["LCR"].push_back();
+
+	successor_states[LK].push_back(LK);
+	successor_states[LK].push_back(LCL);
+	successor_states[LK].push_back(LCR);
+
+	successor_states[LCL].push_back(LCL);
+	successor_states[LCL].push_back(LK);
+
+	successor_states[LCR].push_back(LCR);
+	successor_states[LCR].push_back(LK);
+
 
 	dist_inc = 0.0;
 
@@ -154,9 +158,6 @@ std::vector<std::vector<double>> StateMachine::evaluate_behavior(pose ego_veh, s
     unsigned int min_cost = UINT_MAX;
 
 	std::vector<std::vector<double>> trajectory(2);
-    std::vector<std::vector<double>> trajectory_LK(2);
-    std::vector<std::vector<double>> trajectory_LCL(2);
-    std::vector<std::vector<double>> trajectory_LCR(2);
     std::map<state, double> costs;
 
     std::cout << "Current state: " << current_state << std::endl;
@@ -173,15 +174,8 @@ std::vector<std::vector<double>> StateMachine::evaluate_behavior(pose ego_veh, s
     }
 
 
-
-    //for(state_iter : successor_states[current_state])
+    for(state_iter : successor_states[current_state])
     {
-    	trajectory_LK = generate_trajectory(LK, ego_veh, vehicle_list);
-    	if (current_lane != 0)
-    		trajectory_LCL = generate_trajectory(LCL, ego_veh, vehicle_list);
-    	else if (current_lane != 2)
-    		trajectory_LCR = generate_trajectory(LCR, ego_veh, vehicle_list);
-	    
 	    double cost_for_state = 0;
 		bool vehicle_ahead = false;
 
@@ -202,8 +196,10 @@ std::vector<std::vector<double>> StateMachine::evaluate_behavior(pose ego_veh, s
 		    	vehicles[2].push_back(target);
 		    // else: Vehicles not on the lane will be ignored
 		}
+		double cost;
 
-
+		// Deprecated:
+		// Change!
 		switch (current_state) {
 			case LK:
 				associated_trajectories[LK] = generate_trajectory(LK, ego_veh, vehicle_list);
@@ -240,8 +236,9 @@ std::vector<std::vector<double>> StateMachine::evaluate_behavior(pose ego_veh, s
 
 
 
-
-
+/*
+ *	Old code from playing around with splines:
+ */
 
 
 /*vector<vector<double>> StateMachine::generate_trajectory(state proposed_state, pose ego_veh, vector<vector<double>> target_vehicles)

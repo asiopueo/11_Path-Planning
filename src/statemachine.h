@@ -23,7 +23,6 @@ enum state {LK, PLCL, PLCR, LCL, LCR, EA};
 
 
 
-
 class StateMachine {
 
 	public:
@@ -38,7 +37,7 @@ class StateMachine {
 	private:
 		state current_state;
 		state best_next_state;
-		std::map<state, state> successor_states;
+		std::map<state, std::vector<state>> successor_states;
 		int remaining_points;
 		double dist_inc;
 
@@ -53,8 +52,7 @@ class StateMachine {
 
 		//vector<vector<double>> generate_trajectory(state, pose, vehicle_list);
 		
-		double cost_function_1(std::vector<std::vector<double>>, std::vector<std::vector<double>>);
-		double cost_function_2(std::vector<std::vector<double>>, std::vector<std::vector<double>>);
+		double cost_function_1(std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>);
 };
 
 
