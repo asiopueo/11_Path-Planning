@@ -17,8 +17,9 @@ Maptool::Maptool()
 	std::ifstream in_map_(map_file_.c_str(), std::ifstream::in);
 
 	std::string line;
-	while (getline(in_map_, line)) {
-		istringstream iss(line);
+	while (getline(in_map_, line)) 
+	{
+		std::istringstream iss(line);
 		double x;
 		double y;
 		float s;
@@ -38,14 +39,12 @@ Maptool::Maptool()
 }
 
 
-Maptool::~Maptool() 
-{
-
+Maptool::~Maptool() {
 }
 
 
 // Transform from Cartesian x,y coordinates to Frenet s,d coordinates
-vector<double> Maptool::getFrenet(double x, double y, double theta)
+std::vector<double> Maptool::getFrenet(double x, double y, double theta)
 {
 	int next_wp = NextWaypoint(x,y, theta);
 
@@ -94,7 +93,7 @@ vector<double> Maptool::getFrenet(double x, double y, double theta)
 
 
 // Transform from Frenet s,d coordinates to Cartesian x,y
-vector<double> Maptool::getXY(double s, double d)
+std::vector<double> Maptool::getXY(double s, double d)
 {
 	int prev_wp = -1;
 
@@ -155,16 +154,16 @@ int Maptool::NextWaypoint(double x, double y, double theta)
 	double heading = atan2((map_y-y),(map_x-x));
 
 	double angle = fabs(theta-heading);
-  angle = min(2*M_PI - angle, angle);
+	angle = std::min(2*M_PI - angle, angle);
 
-  if(angle > M_PI/4)
-  {
-    closestWaypoint++;
-  if (closestWaypoint == map_waypoints_x.size())
-  {
-    closestWaypoint = 0;
-  }
-  }
+	if(angle > M_PI/4)
+	{
+		closestWaypoint++;
+		if (closestWaypoint == map_waypoints_x.size())
+		{
+			closestWaypoint = 0;
+		}
+	}
 
-  return closestWaypoint;
+	return closestWaypoint;
 }

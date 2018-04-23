@@ -5,6 +5,7 @@
 #include <vector>
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
+#include "Eigen-3.3/Eigen/Dense"
 
 
 struct pose {
@@ -26,6 +27,7 @@ void vehicle2global(std::vector<std::vector<double>>& trajectory, pose ego_veh);
 
 Eigen::VectorXd calculate_coefficients(Eigen::MatrixXd init, Eigen::VectorXd final);
 
+double quintic_poly(Eigen::VectorXd coeffs, double x);
 
 #endif /* COMMON_H */
 
