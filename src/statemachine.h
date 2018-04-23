@@ -3,12 +3,21 @@
 
 #include <climits>
 #include <map>
-//#include "Eigen-3.3/Eigen/Core"
-//#include "Eigen-3.3/Eigen/QR"
 #include "common.h"
 #include "maptool.h"
 
 
+
+
+/*
+ * STAY:  Stay on current lane
+ * PLCL:  Prepare Lane Change Left
+ * PLCR:  Prepare Lane Change Right
+ * LCL:   Lane Change Left
+ * LCR:   Lane Change Right
+ */
+
+enum state {LK, PLCL, PLCR, LCL, LCR, EA};
 
 
 
@@ -34,14 +43,16 @@ class StateMachine {
 		unsigned int current_lane;
 		unsigned int intended_lane;
 
-		double weight_1, weight_2;
+		std::map<state, vector<vector<double>>> associated_trajectories;
+
+		vector<double> weights;
 
 		Maptool maptool;
 
 		//vector<vector<double>> generate_trajectory(state, pose, vehicle_list);
 		
-		double cost_function_1(vector<vector<double>>);
-		double cost_function_2(vector<vector<double>>);
+		double cost_function_1(vector<vector<double>>, vector<vector<double>>);
+		double cost_function_2(vector<vector<double>>, vector<vector<double>>);
 };
 
 

@@ -2,7 +2,8 @@
 #include "common.h"
 #include <math.h>
 #include <iostream>
-
+#include "Eigen-3.3/Eigen/Core"
+#include "Eigen-3.3/Eigen/QR"
 
 double deg2rad(double x) { return x * M_PI / 180; }
 double rad2deg(double x) { return x * 180 / M_PI; }
@@ -43,3 +44,21 @@ void vehicle2global(vector<vector<double>> &trajectory, pose ego_veh)
 		trajectory[1][i] = tmp_y;
 	}
 }
+
+
+
+
+
+// Insert quintic polynomial calculation here...
+vector<double> calculate_coefficients(Eigen::MatrixXd A, Eigen::VectorXd B)
+{
+	Eigen::VectorXd coefficients = A.inverse()*B;
+
+	return coefficients;
+}
+
+
+
+
+
+
