@@ -134,6 +134,9 @@ int main() {
                     // Concatenate new waypoint coordinates:
                     next_x_vals.insert(next_x_vals.end(), traj[0].begin(), traj[0].end());
                     next_y_vals.insert(next_y_vals.end(), traj[1].begin(), traj[1].end());
+                    //next_x_vals = traj[0];
+                    //next_y_vals = traj[1];
+
 
                     usleep(500000);
 

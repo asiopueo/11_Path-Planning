@@ -58,13 +58,13 @@ Eigen::VectorXd calculate_coefficients(Eigen::MatrixXd A_init, Eigen::VectorXd B
 // Evaluate quintic polynomial
 double quintic_poly(Eigen::VectorXd coeffs, double x)
 {
-	double result = 0;
+	double sum = 0;
 
 	// Change the upper threshold!
-	for (int i=0; i<3; i++)
-		result += coeffs(i) * pow(x,i);
+	for (int i=0; i<6; i++)
+		sum += coeffs(i) * pow(x,i);
 	
-	return result;
+	return sum;
 }
 
 

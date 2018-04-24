@@ -1,9 +1,15 @@
 #include <cmath>
 #include "statemachine.h"
-#include "spline.h"
 #include <iostream>
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
+
+// Only necessary when fooling around with splines:
+// #include "spline.h"
+
+
+
+
 
 StateMachine::StateMachine()
 {
@@ -41,42 +47,29 @@ void successor_states() {
 
 
 
+/*
+ *	TODO: getXY() needs to be reimplemented as the polygonal vertices (and corresponding jerks) arise from there!
+ */
+
+
 
 std::vector<std::vector<double>> StateMachine::generate_trajectory(state proposed_state, pose ego_veh, std::vector<std::vector<double>> target_vehicles)
 {
-	// Define anchor points here:
-	std::vector<std::vector<double>> anchor_vals(2);
+	switch(proposed_state) {
+		case LK:
+			intended_lane = current_lane;
+			break;
+		case LCL:
+			intended_lane = current_lane-1;
+			break;
+		case LCR:
+			intended_lane = current_lane+1;
+			break;
+	}
+
+
 	std::vector<std::vector<double>> trajectory(2);
 
-	// Frenet coordinates of ego-vehicle:
-
-
-	// Calculation for s(t):
-	Eigen::MatrixXd matrix_s = Eigen::MatrixXd(3,3);
-	Eigen::VectorXd vector_s = Eigen::VectorXd(3);
-
-	matrix_s << 1, 0, 0,
-				0, 2, 0,
-				0, 0, 3;
-
-	vector_s << 60.0, 0.0, 0.0;
-
-	// Calculation for d(t):
-	Eigen::MatrixXd matrix_d = Eigen::MatrixXd(3,3);
-	Eigen::VectorXd vector_d = Eigen::VectorXd(3);
-
-	matrix_d << 1, 0, 0,
-				0, 2, 0,
-				0, 0, 3;
-
-	vector_d << 6, 0.0, 1.0;
-
-
-
-	Eigen::VectorXd coeffs_s = calculate_coefficients(matrix_s, vector_s);
-	Eigen::VectorXd coeffs_d = calculate_coefficients(matrix_d, vector_d);
-
-	
 	bool vehicle_ahead = false;
     for (int i=0; i<target_vehicles.size(); i++)
     {
@@ -96,26 +89,78 @@ std::vector<std::vector<double>> StateMachine::generate_trajectory(state propose
 	}
 
 
-	double T_total = 4.2; // Total time for trajectory [sec]
+	double T = 4.2; // Total time for trajectory [sec]
 	unsigned int number_of_steps;
 
 
 	if (vehicle_ahead) {
-		T_total += 0.02;
+		T += 0.02;
 		std::cout << "Vehicle ahead!" << std::endl;
 	}
-	else if (dist_inc <= 10)
-		T_total -= 0.02;
+	//else if (dist_inc <= 10)
+	//	T -= 0.02;
+
+
+
+
+
+	// Calculation for s(t):
+	Eigen::MatrixXd matrix_s = Eigen::MatrixXd(3,3);
+	Eigen::VectorXd vector_s = Eigen::VectorXd(3);
+	Eigen::VectorXd s_i = Eigen::VectorXd(3);
+	Eigen::VectorXd s_f = Eigen::VectorXd(3);
+
+	matrix_s << pow(T,3), pow(T,4), pow(T,5),
+				3*pow(T,2), 4*pow(T,3), 5*pow(T,4),
+				6*pow(T,1), 12*pow(T,2), 20*pow(T,3);
+
+	s_i << ego_veh.s, 		5., 0.;
+	s_f << ego_veh.s + 90., 5., 0.;
+
+	vector_s << s_f(0) - (s_i(0)+s_i(1)*T+0.5*s_i(2)*pow(T,2)), 
+				s_f(1) - (s_i(1)+s_i(2)*T), 
+				s_f(2) -  s_i(2);
+
+	// Calculation for d(t):
+	Eigen::MatrixXd matrix_d = Eigen::MatrixXd(3,3);
+	Eigen::VectorXd vector_d = Eigen::VectorXd(3);
+	Eigen::VectorXd d_i = Eigen::VectorXd(3);
+	Eigen::VectorXd d_f = Eigen::VectorXd(3);
+
+	matrix_d << pow(T,3), pow(T,4), pow(T,5),
+				3*pow(T,2), 4*pow(T,3), 5*pow(T,4),
+				6*pow(T,1), 12*pow(T,2), 20*pow(T,3);
+
+	d_i << ego_veh.d, 0., 0.;
+	d_f << 4*intended_lane+2, 0., 0.;
+
+	vector_d << d_f(0) - (d_i(0)+d_i(1)*T+0.5*d_i(2)*pow(T,2)), 
+				d_f(1) - (d_i(1)+d_i(2)*T), 
+				d_f(2) -  d_i(2);
+
+
+	// Result of these calculations are the coefficients \alpha_3, \alpha_4, and \alpha_5
+	Eigen::VectorXd result_s = calculate_coefficients(matrix_s, vector_s);
+	Eigen::VectorXd result_d = calculate_coefficients(matrix_d, vector_d);
+
+	Eigen::VectorXd coeffs_s = Eigen::VectorXd(6);
+	Eigen::VectorXd coeffs_d = Eigen::VectorXd(6);
+
+	coeffs_s << s_i(0), s_i(1), 0.5*s_i(2), result_s(0), result_s(1), result_s(2);
+	coeffs_d << d_i(0), d_i(1), 0.5*d_i(2), result_d(0), result_d(1), result_d(2);
+
 
 	// Prefactor of 50 accounts for 50Hz/20ms update frequency
-	number_of_steps = 50 * T_total;
+	number_of_steps = T / 0.02;
 
+	//for (int i=0; i<6; i++)
+	//	std::cout << coeffs_s(i) << std::endl;
 
 	// In order to eliminate jiggering in longitudinal direction.
-	for(int i=1; i-1 < number_of_steps; i++)
+	for(int i=1; i < number_of_steps; i++)
 	{		      
-		trajectory[0].push_back(quintic_poly(coeffs_d, 0.02 * i/T_total ));
-		trajectory[1].push_back(quintic_poly(coeffs_s, 0.02 * i/T_total ));
+		trajectory[0].push_back(quintic_poly(coeffs_s, 0.02*i ));
+		trajectory[1].push_back(quintic_poly(coeffs_d, 0.02*i ));
 	}
 
 
@@ -152,7 +197,7 @@ double StateMachine::cost_function_1(std::vector<std::vector<double>> trajectory
 	double delta_d = abs(intended_lane-current_lane);
 	// The faster the trajectory is, the better!
 	cost = exp( -trajectory[0][end_of_path] / delta_d );
-
+	//std::cout << "Cost: " << cost << std::endl;
 	return cost;
 }
 
@@ -169,10 +214,11 @@ std::vector<std::vector<double>> StateMachine::evaluate_behavior(pose ego_veh, s
 	std::vector<std::vector<double>> trajectory(2);
     //std::map<state, double> costs;
 
-    std::cout << "Current state: " << current_state << std::endl;
+    //std::cout << "Current state: " << current_state << std::endl;
     //for (auto iter : vehicle_list)
     //	cout << iter[0] << endl;
 
+	// Frenet coordinates of ego-vehicle:
     std::vector<double> egoFrenet = maptool.getFrenet(ego_veh.pos_x, ego_veh.pos_y, ego_veh.angle);
     ego_veh.s = egoFrenet[0];
     ego_veh.d = egoFrenet[1];
@@ -212,8 +258,9 @@ std::vector<std::vector<double>> StateMachine::evaluate_behavior(pose ego_veh, s
   			min_cost = cost_for_state;
   			best_next_state = state_iter;
   		}
-
 	}
+	std::cout << "LCL:" << "\tLK:" << "\tLCR:" << std::endl;
+
 	return trajectory = associated_trajectories[best_next_state];
 }
 
