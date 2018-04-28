@@ -1,5 +1,6 @@
 #include <cmath>
 #include "statemachine.h"
+#include "trajectory.h"
 #include <iostream>
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
@@ -53,7 +54,7 @@ void successor_states() {
 
 
 
-std::vector<std::vector<double>> StateMachine::generate_trajectory(state proposed_state, pose ego_veh, std::vector<std::vector<double>> target_vehicles)
+trajectory_t StateMachine::generate_trajectory(state proposed_state, pose egoPose)
 {
 	switch(proposed_state) {
 		case LK:
@@ -67,41 +68,15 @@ std::vector<std::vector<double>> StateMachine::generate_trajectory(state propose
 			break;
 	}
 
+	trajectory_t trajectory(2);
 
-	std::vector<std::vector<double>> trajectory(2);
-
-	bool vehicle_ahead = false;
-    for (int i=0; i<target_vehicles.size(); i++)
-    {
-	    double target_d = target_vehicles[i][6];
-	    // Check if target vehicle is on the same lane
-	    if ( target_d > (4*current_lane-2) && target_d < (4*current_lane+2) )
-	    {
-	        double target_s = target_vehicles[i][5];
-			double target_vx = target_vehicles[i][3];
-	        double target_vy = target_vehicles[i][4];
-	        double target_speed = sqrt(target_vx*target_vx+target_vy*target_vy);
-
-	        // Check is target vehicle is on collision course
-	        if ( (ego_veh.s-target_s)<50 && ego_veh.s-target_s>0 && target_speed <= 50*dist_inc)
-	        	vehicle_ahead = true;
-	    }
-	}
+	if (intended_lane < 0 || intended_lane > 2)
+		return trajectory;
 
 
+	// Check traffic
 	double T = 4.2; // Total time for trajectory [sec]
 	unsigned int number_of_steps;
-
-
-	if (vehicle_ahead) {
-		T += 0.02;
-		std::cout << "Vehicle ahead!" << std::endl;
-	}
-	//else if (dist_inc <= 10)
-	//	T -= 0.02;
-
-
-
 
 
 	// Calculation for s(t):
@@ -114,8 +89,8 @@ std::vector<std::vector<double>> StateMachine::generate_trajectory(state propose
 				3*pow(T,2), 4*pow(T,3), 5*pow(T,4),
 				6*pow(T,1), 12*pow(T,2), 20*pow(T,3);
 
-	s_i << ego_veh.s, 		5., 0.;
-	s_f << ego_veh.s + 90., 5., 0.;
+	s_i << egoPose.s, 20., 0.;
+	s_f << egoPose.s + 90., 20., 0.;
 
 	vector_s << s_f(0) - (s_i(0)+s_i(1)*T+0.5*s_i(2)*pow(T,2)), 
 				s_f(1) - (s_i(1)+s_i(2)*T), 
@@ -131,7 +106,7 @@ std::vector<std::vector<double>> StateMachine::generate_trajectory(state propose
 				3*pow(T,2), 4*pow(T,3), 5*pow(T,4),
 				6*pow(T,1), 12*pow(T,2), 20*pow(T,3);
 
-	d_i << ego_veh.d, 0., 0.;
+	d_i << egoPose.d, 0., 0.;
 	d_f << 4*intended_lane+2, 0., 0.;
 
 	vector_d << d_f(0) - (d_i(0)+d_i(1)*T+0.5*d_i(2)*pow(T,2)), 
@@ -159,8 +134,8 @@ std::vector<std::vector<double>> StateMachine::generate_trajectory(state propose
 	// In order to eliminate jiggering in longitudinal direction.
 	for(int i=1; i < number_of_steps; i++)
 	{		      
-		trajectory[0].push_back(quintic_poly(coeffs_s, 0.02*i ));
-		trajectory[1].push_back(quintic_poly(coeffs_d, 0.02*i ));
+		trajectory[0].push_back(quintic_poly(coeffs_s, 0.02*i));
+		trajectory[1].push_back(quintic_poly(coeffs_d, 0.02*i));
 	}
 
 
@@ -168,6 +143,7 @@ std::vector<std::vector<double>> StateMachine::generate_trajectory(state propose
 	{
 		std::vector<double> tmpXY;
 		tmpXY = maptool.getXY(trajectory[0][i], trajectory[1][i]);
+		//tmpXY = maptool.parabolicGetXY(trajectory[0][i], trajectory[1][i]);
 		trajectory[0][i] = tmpXY[0];
 		trajectory[1][i] = tmpXY[1];
 	}
@@ -176,8 +152,43 @@ std::vector<std::vector<double>> StateMachine::generate_trajectory(state propose
 }
 
 
+double StateMachine::cost_function_0(trajectory_t trajectory, pose egoPose, targetList_t list)
+{
+	double cost = 0;
+	bool collision_imminent = false;
 
-double StateMachine::cost_function_1(std::vector<std::vector<double>> trajectory, std::vector<std::vector<std::vector<double>>> list)
+	// Check if there is a vehicle on the left lane:
+	// Make the cost very high if the lane is occupied!
+	//
+	for (int i=0; i<list.size(); i++)
+	{
+		double target_d = list[i][6];
+		double target_s = list[i][5];
+		double target_vx = list[i][3];
+		double target_vy = list[i][4];
+		double target_speed = sqrt(target_vx*target_vx+target_vy*target_vy);
+
+		for (int j=0; j<50; j++)
+		{
+			double target_pos = target_speed*j*0.02;
+
+			/*if (distance(egoPose-target_pos)<5.)
+			{
+				collision_imminent = true;
+			}*/
+		}
+	}
+
+	if (collision_imminent=true)
+		cost = UINT_MAX;
+	else
+		cost = 0;
+
+	return cost;
+}
+
+
+double StateMachine::cost_function_1(trajectory_t trajectory)
 {
 	double cost;
 	unsigned int end_of_path = trajectory[0].size()-1;
@@ -188,13 +199,12 @@ double StateMachine::cost_function_1(std::vector<std::vector<double>> trajectory
 	double target_speed = sqrt(target_vx*target_vx+target_vy*target_vy);
 
 	// Check is target vehicle is on collision course
-	if ( (ego_veh.s-target_s)<50 && ego_veh.s-target_s>0 && target_speed <= 50*dist_inc)
-	vehicle_ahead = true;
+	if ( (egoPose.s-target_s)<50 && egoPose.s-target_s>0 && target_speed <= 50*dist_inc)
+		vehicle_ahead = true;
 	*/
 
-
-		//delta_s = ego_veh.s - vehicle.s;
-	double delta_d = abs(intended_lane-current_lane);
+	//delta_s = egoPose.s - vehicle.s;
+	double delta_d = abs(trajectory[1][end_of_path] - 4*current_lane+2);
 	// The faster the trajectory is, the better!
 	cost = exp( -trajectory[0][end_of_path] / delta_d );
 	//std::cout << "Cost: " << cost << std::endl;
@@ -205,25 +215,25 @@ double StateMachine::cost_function_1(std::vector<std::vector<double>> trajectory
 
 
 
-std::vector<std::vector<double>> StateMachine::evaluate_behavior(pose ego_veh, std::vector<std::vector<double>> vehicle_list, int rest)
+trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_list, int rest)
 {
 	state best_next_state;
 	remaining_points = rest;
     unsigned int min_cost = UINT_MAX;
 
-	std::vector<std::vector<double>> trajectory(2);
-    //std::map<state, double> costs;
+	trajectory_t trajectory(2);
+    std::map<state, double> costs;
 
     //std::cout << "Current state: " << current_state << std::endl;
     //for (auto iter : vehicle_list)
     //	cout << iter[0] << endl;
 
 	// Frenet coordinates of ego-vehicle:
-    std::vector<double> egoFrenet = maptool.getFrenet(ego_veh.pos_x, ego_veh.pos_y, ego_veh.angle);
-    ego_veh.s = egoFrenet[0];
-    ego_veh.d = egoFrenet[1];
+    std::vector<double> egoFrenet = maptool.getFrenet(egoPose.pos_x, egoPose.pos_y, egoPose.angle);
+    egoPose.s = egoFrenet[0];
+    egoPose.d = egoFrenet[1];
 
-    if (abs(ego_veh.s-4*intended_lane+2)<0.1) {
+    if (abs(egoPose.s-4*intended_lane+2)<0.1) {
     	current_lane = intended_lane;
     	current_state = LK;
     }
@@ -231,35 +241,22 @@ std::vector<std::vector<double>> StateMachine::evaluate_behavior(pose ego_veh, s
     for(auto state_iter : successor_states[current_state])
     {
 	    double cost_for_state = 0;
-		bool vehicle_ahead = false;
 
-	    // Check if there is a vehicle on the left lane:
-	    // Make the cost very high if the lane is occupied!
-		std::vector<std::vector<std::vector<double>>> vehicles(3);
+		associated_trajectories[state_iter] = generate_trajectory(state_iter, egoPose);
 
-	    for (auto target : vehicle_list)
-	    {
-		    double target_d = target[6];
+		// Cost function for obstacles and road departure 
+		cost_for_state += cost_function_0(associated_trajectories[state_iter], egoPose, vehicle_list);
+		// Cost function for trajectory profile (speed, jerk, etc.)
+		//cost_for_state += cost_function_1(associated_trajectories[state_iter]);
+		costs[state_iter] = cost_for_state;
 
-		    // Check on which lane the target vehicle is:
-		    if ( 0< target_d <4 )
-		        vehicles[0].push_back(target);
-		    else if (4 <= target_d <= 8)
-		    	vehicles[1].push_back(target);
-		    else if (8 < target_d < 12)
-		    	vehicles[2].push_back(target);
-		    // else: Vehicles not on the road will be ignored
-		}
-
-		associated_trajectories[state_iter] = generate_trajectory(state_iter, ego_veh, vehicle_list);
-		cost_for_state = cost_function_1(associated_trajectories[state_iter], vehicles);
-
-  		if (cost_for_state < min_cost){
+  		if (cost_for_state <= min_cost){
   			min_cost = cost_for_state;
   			best_next_state = state_iter;
   		}
 	}
-	std::cout << "LCL:" << "\tLK:" << "\tLCR:" << std::endl;
+
+	std::cout << "LCL:" << costs[LCL] << "\tLK:" << costs[LK] << "\tLCR:" << costs[LK] << std::endl;
 
 	return trajectory = associated_trajectories[best_next_state];
 }
@@ -271,15 +268,15 @@ std::vector<std::vector<double>> StateMachine::evaluate_behavior(pose ego_veh, s
  *	Old code from playing around with splines:
  */
 
-/*vector<vector<double>> StateMachine::generate_trajectory(state proposed_state, pose ego_veh, vector<vector<double>> target_vehicles)
+/*vector<vector<double>> StateMachine::generate_trajectory(state proposed_state, pose egoPose, vector<vector<double>> target_vehicles)
 {
 	// Define anchor points here:
 	vector<vector<double>> anchor_vals(2);
 	vector<vector<double>> trajectory(2);
 
 	// Define "anchor waypoints" 30, 60, and 90 meters in front of the car:
-	anchor_vals[0].push_back( ego_veh.pos_x );
-	anchor_vals[1].push_back( ego_veh.pos_y );
+	anchor_vals[0].push_back( egoPose.pos_x );
+	anchor_vals[1].push_back( egoPose.pos_y );
 
 	double d_1, d_2, d_3;
 
@@ -288,13 +285,13 @@ std::vector<std::vector<double>> StateMachine::evaluate_behavior(pose ego_veh, s
 	d_3 = 4*intended_lane+2;
 
 	vector<double> tmp(2);
-	tmp = maptool.getXY(ego_veh.s+30, d_1);
+	tmp = maptool.getXY(egoPose.s+30, d_1);
 	anchor_vals[0].push_back( tmp[0] );
 	anchor_vals[1].push_back( tmp[1] );
-	tmp = maptool.getXY(ego_veh.s+60, d_2);
+	tmp = maptool.getXY(egoPose.s+60, d_2);
 	anchor_vals[0].push_back( tmp[0] );
 	anchor_vals[1].push_back( tmp[1] );
-	tmp = maptool.getXY(ego_veh.s+90, d_3);
+	tmp = maptool.getXY(egoPose.s+90, d_3);
 	anchor_vals[0].push_back( tmp[0] );
 	anchor_vals[1].push_back( tmp[1] );
 
@@ -316,7 +313,7 @@ std::vector<std::vector<double>> StateMachine::evaluate_behavior(pose ego_veh, s
 	        double target_speed = sqrt(target_vx*target_vx+target_vy*target_vy);
 
 	        // Check is target vehicle is on collision course
-	        if ( (ego_veh.s-target_s)<50 && ego_veh.s-target_s>0 && target_speed <= 50*dist_inc)
+	        if ( (egoPose.s-target_s)<50 && egoPose.s-target_s>0 && target_speed <= 50*dist_inc)
 	        	vehicle_ahead = true;
 	    }
 	}
@@ -330,7 +327,7 @@ std::vector<std::vector<double>> StateMachine::evaluate_behavior(pose ego_veh, s
 		dist_inc += 0.04;
 
 
-	global2vehicle(anchor_vals, ego_veh);
+	global2vehicle(anchor_vals, egoPose);
 	
 	//for (int i=0; i<anchor_vals[0].size(); i++)
 	//    cout << "anchor_vals: " << anchor_vals[0][i] << "\t" << anchor_vals[1][i] << endl;
@@ -350,7 +347,7 @@ std::vector<std::vector<double>> StateMachine::evaluate_behavior(pose ego_veh, s
 		trajectory[1].push_back(spl(i*dist_inc));
 	}
 
-	vehicle2global(trajectory, ego_veh);
+	vehicle2global(trajectory, egoPose);
 
 	return trajectory;
 }*/

@@ -29,11 +29,9 @@ class StateMachine {
 		StateMachine();
 		~StateMachine();
 
-		// method which evaluates behaviour
-		std::vector<std::vector<double>> evaluate_behavior(pose ego_veh, std::vector<std::vector<double>> vehicle_list, int);
-		void execute_state_transition();
-		std::vector<std::vector<double>> generate_trajectory(state, pose, std::vector<std::vector<double>> vehicle_list);
-
+		// Method which evaluates behaviour
+		trajectory_t evaluate_behavior(pose ego_veh, targetList_t vehicle_list, int);
+		
 	private:
 		state current_state;
 		state best_next_state;
@@ -44,15 +42,15 @@ class StateMachine {
 		unsigned int current_lane;
 		unsigned int intended_lane;
 
-		std::map<state, std::vector<std::vector<double>>> associated_trajectories;
-
-		std::vector<double> weights;
+		std::map<state, trajectory_t> associated_trajectories;
 
 		Maptool maptool;
-
-		//vector<vector<double>> generate_trajectory(state, pose, vehicle_list);
 		
-		double cost_function_1(std::vector<std::vector<double>>, std::vector<std::vector<std::vector<double>>>);
+		trajectory_t generate_trajectory(state, pose);
+
+		std::vector<double> weights;
+		double cost_function_0(trajectory_t, pose, targetList_t);
+		double cost_function_1(trajectory_t);
 };
 
 

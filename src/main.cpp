@@ -46,10 +46,10 @@ string hasData(string s)
 
 int main() {
     uWS::Hub h;
-    pose ego_pose;
+    pose egoPose;
     StateMachine state_machine;
 
-    h.onMessage([&ego_pose, &state_machine](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+    h.onMessage([&egoPose, &state_machine](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
         // "42" at the start of the message means there's a websocket message event.
         // The 4 signifies a websocket message
         // The 2 signifies a websocket event
@@ -101,18 +101,18 @@ int main() {
 
                     if(path_size == 0)
                     {
-                        ego_pose.pos_x = car_x;
-                        ego_pose.pos_y = car_y;
-                        ego_pose.angle = deg2rad(car_yaw);
+                        egoPose.pos_x = car_x;
+                        egoPose.pos_y = car_y;
+                        egoPose.angle = deg2rad(car_yaw);
                     }
                     else
                     {
-                        ego_pose.pos_x = previous_path_x[path_size-1];
-                        ego_pose.pos_y = previous_path_y[path_size-1];
+                        egoPose.pos_x = previous_path_x[path_size-1];
+                        egoPose.pos_y = previous_path_y[path_size-1];
 
                         double pos_x2 = previous_path_x[path_size-2];
                         double pos_y2 = previous_path_y[path_size-2];
-                        ego_pose.angle = atan2(ego_pose.pos_y-pos_y2, ego_pose.pos_x-pos_x2);
+                        egoPose.angle = atan2(egoPose.pos_y-pos_y2, egoPose.pos_x-pos_x2);
                     }
 
 
@@ -121,7 +121,7 @@ int main() {
                     // target_vehicle data format: []
                     for (int i=0; i<sensor_fusion.size(); ++i)
                     {
-                        if (distance(sensor_fusion[i][1], sensor_fusion[i][2], ego_pose.pos_x, ego_pose.pos_y)<60)
+                        if (distance(sensor_fusion[i][1], sensor_fusion[i][2], egoPose.pos_x, egoPose.pos_y)<60)
                             vehicle_list.push_back(sensor_fusion[i]);
                     }
 
@@ -129,7 +129,7 @@ int main() {
 
                     
                     // Let state machine decide what to do next:
-                    auto traj = state_machine.evaluate_behavior(ego_pose, vehicle_list, path_size);
+                    trajectory_t traj = state_machine.evaluate_behavior(egoPose, vehicle_list, path_size);
 
                     // Concatenate new waypoint coordinates:
                     next_x_vals.insert(next_x_vals.end(), traj[0].begin(), traj[0].end());

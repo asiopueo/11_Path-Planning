@@ -16,14 +16,17 @@ struct pose {
 	double d;
 };
 
+typedef std::vector<std::vector<double>> trajectory_t;
+typedef std::vector<std::vector<double>> targetList_t;
+
 // For converting back and forth between radians and degrees.
 double deg2rad(double x);
 double rad2deg(double x);
 
 double distance(double x1, double y1, double x2, double y2);
 
-void global2vehicle(std::vector<std::vector<double>>& trajectory, pose ego_veh);
-void vehicle2global(std::vector<std::vector<double>>& trajectory, pose ego_veh);
+void global2vehicle(trajectory_t& trajectory, pose ego_veh);
+void vehicle2global(trajectory_t& trajectory, pose ego_veh);
 
 Eigen::VectorXd calculate_coefficients(Eigen::MatrixXd init, Eigen::VectorXd final);
 

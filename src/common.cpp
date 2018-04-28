@@ -1,6 +1,6 @@
 
 #include "common.h"
-#include <math.h>
+#include <cmath>
 #include <iostream>
 
 
@@ -51,7 +51,7 @@ void vehicle2global(std::vector<std::vector<double>> &trajectory, pose ego_veh)
 Eigen::VectorXd calculate_coefficients(Eigen::MatrixXd A_init, Eigen::VectorXd B_final)
 {
 	Eigen::MatrixXd Ai = A_init.inverse();
-	Eigen::VectorXd coefficients = Ai*B_final;
+	Eigen::VectorXd coefficients = Ai * B_final;
 	return coefficients;
 }
 
