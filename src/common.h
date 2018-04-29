@@ -8,6 +8,17 @@
 #include "Eigen-3.3/Eigen/Dense"
 
 
+
+/*
+ * STAY:  Stay on current lane
+ * PLCL:  Prepare Lane Change Left
+ * PLCR:  Prepare Lane Change Right
+ * LCL:   Lane Change Left
+ * LCR:   Lane Change Right
+ */
+
+enum state {LK, PLCL, PLCR, LCL, LCR, EA};
+
 struct pose {
 	double pos_x;
 	double pos_y;

@@ -2,7 +2,7 @@
 #define MAPTOOL_H
 
 #include <vector>
-
+#include "common.h"
 
 class Maptool
 {
