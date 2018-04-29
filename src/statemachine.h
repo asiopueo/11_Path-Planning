@@ -4,7 +4,7 @@
 #include <climits>
 #include <map>
 #include <vector>
-#include "maptool.h"
+//#include "maptool.h"
 #include "common.h"
 #include "trajectory.h"
 #include <cmath>
@@ -41,8 +41,8 @@ class StateMachine {
 		Maptool maptool;
 		
 		std::vector<double> weights;
-		double cost_function_0(const Trajectory &, const pose, const targetList_t);
-		double cost_function_1(const Trajectory &);
+		double cost_function_0(Trajectory &, const pose, const targetList_t, Maptool);
+		double cost_function_1(const Trajectory &, double delta_s, double delta_d);
 };
 
 

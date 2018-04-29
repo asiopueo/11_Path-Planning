@@ -11,7 +11,7 @@ class Trajectory
 		Trajectory(pose, double delta_s, double delta_d);
 		~Trajectory();
 
-		trajectory_t getXY(Maptool);
+		trajectory_t getXY(Maptool map);
 
 	private:
 		Eigen::VectorXd coeffs_s;

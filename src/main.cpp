@@ -130,7 +130,7 @@ int main() {
                     
                     // Let state machine decide what to do next:
                     
-                    if (path_size==0)
+                    if (path_size<=10)
                     {
                         std::cout << "== Planning new trajectory ==" << std::endl;
                         trajectory_t traj = state_machine.evaluate_behavior(egoPose, vehicle_list, path_size);   

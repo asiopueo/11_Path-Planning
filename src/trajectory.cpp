@@ -35,7 +35,7 @@ Trajectory::Trajectory(pose egoPose, double delta_s, double delta_d)
 				6*pow(T,1), 12*pow(T,2), 20*pow(T,3);
 
 	d_i << egoPose.d, 0., 0.;
-	d_f << 6 + delta_d, 0., 0.;
+	d_f << delta_d, 0., 0.;
 
 	vector_d << d_f(0) - (d_i(0)+d_i(1)*T+0.5*d_i(2)*pow(T,2)), 
 				d_f(1) - (d_i(1)+d_i(2)*T), 
@@ -83,8 +83,7 @@ double Trajectory::evaluate_d(double t)
 	return sum;
 }
 
-
-trajectory_t Trajectory::getXY(Maptool maptool)
+trajectory_t Trajectory::getXY(Maptool map)
 {
 	trajectory_t trajectory(2);
 	double T = 4.2;
@@ -104,7 +103,7 @@ trajectory_t Trajectory::getXY(Maptool maptool)
 	for (int i=0; i<trajectory[0].size(); i++) 
 	{
 		std::vector<double> tmpXY;
-		tmpXY = maptool.getXY(trajectory[0][i], trajectory[1][i]);
+		tmpXY = map.getXY(trajectory[0][i], trajectory[1][i]);
 		//tmpXY = maptool.parabolicGetXY(trajectory[0][i], trajectory[1][i]);
 		trajectory[0][i] = tmpXY[0];
 		trajectory[1][i] = tmpXY[1];
