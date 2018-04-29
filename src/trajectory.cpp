@@ -1,7 +1,7 @@
 #include "trajectory.h"
 #include <iostream>
 
-Trajectory::Trajectory(state proposed_state, pose egoPose)
+Trajectory::Trajectory(pose egoPose, double delta_s, double delta_d)
 {
 	// Check traffic
 	double T = 4.2; // Total time for trajectory [sec]
@@ -18,7 +18,7 @@ Trajectory::Trajectory(state proposed_state, pose egoPose)
 				6*pow(T,1), 12*pow(T,2), 20*pow(T,3);
 
 	s_i << egoPose.s, 20., 0.;
-	s_f << egoPose.s + 90., 20., 0.;
+	s_f << egoPose.s + 90. + delta_s, 20., 0.;
 
 	vector_s << s_f(0) - (s_i(0)+s_i(1)*T+0.5*s_i(2)*pow(T,2)), 
 				s_f(1) - (s_i(1)+s_i(2)*T), 
@@ -35,7 +35,7 @@ Trajectory::Trajectory(state proposed_state, pose egoPose)
 				6*pow(T,1), 12*pow(T,2), 20*pow(T,3);
 
 	d_i << egoPose.d, 0., 0.;
-	d_f << 6, 0., 0.;
+	d_f << 6 + delta_d, 0., 0.;
 
 	vector_d << d_f(0) - (d_i(0)+d_i(1)*T+0.5*d_i(2)*pow(T,2)), 
 				d_f(1) - (d_i(1)+d_i(2)*T), 
@@ -52,13 +52,13 @@ Trajectory::Trajectory(state proposed_state, pose egoPose)
 	coeffs_s << s_i(0), s_i(1), 0.5*s_i(2), result_s(0), result_s(1), result_s(2);
 	coeffs_d << d_i(0), d_i(1), 0.5*d_i(2), result_d(0), result_d(1), result_d(2);
 
-	for (int i=0; i<6; i++)
+	/*for (int i=0; i<6; i++)
 		std::cout << coeffs_s(i) << "\t";
 	std::cout << std::endl;
 
 	for (int i=0; i<6; i++)
 		std::cout << coeffs_d(i) << "\t";
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 }
 
 
@@ -99,7 +99,8 @@ trajectory_t Trajectory::getXY(Maptool maptool)
 		trajectory[1].push_back(evaluate_d(0.02*i));
 	}
 
-	std::cout << trajectory[0].size() << std::endl;
+	//std::cout << trajectory[0].size() << std::endl;
+	
 	for (int i=0; i<trajectory[0].size(); i++) 
 	{
 		std::vector<double> tmpXY;

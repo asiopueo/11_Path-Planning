@@ -1,5 +1,6 @@
 #include "statemachine.h"
 
+#include <random>
 
 
 StateMachine::StateMachine()
@@ -40,12 +41,9 @@ void successor_states() {
 double StateMachine::cost_function_0(const Trajectory &trajectory, const pose egoPose, const targetList_t list)
 {
 	double cost = 0;
-	/*
-	bool collision_imminent = false;
 
 	// Check if there is a vehicle on the left lane:
 	// Make the cost very high if the lane is occupied!
-
 	for (int i=0; i<list.size(); i++)
 	{
 		double target_d = list[i][6];
@@ -53,6 +51,8 @@ double StateMachine::cost_function_0(const Trajectory &trajectory, const pose eg
 		double target_vx = list[i][3];
 		double target_vy = list[i][4];
 		double target_speed = sqrt(target_vx*target_vx+target_vy*target_vy);
+
+		//std::cout << "Speed: " << target_speed << std::endl;
 
 		for (int j=0; j<50; j++)
 		{
@@ -63,9 +63,9 @@ double StateMachine::cost_function_0(const Trajectory &trajectory, const pose eg
 			if (distance(egoPose-target_pos)<5.)
 			{
 				cost = 1/dist;
-			}
+			}*/
 		}
-	}*/
+	}
 
 	/*if (collision_imminent=true)
 		cost = UINT_MAX;
@@ -79,11 +79,11 @@ double StateMachine::cost_function_0(const Trajectory &trajectory, const pose eg
 double StateMachine::cost_function_1(const Trajectory &trajectory)
 {
 	double cost = 0;
-	/*unsigned int end_of_path = trajectory[0].size()-1;
+	//unsigned int end_of_path = trajectory[0].size()-1;
 
-	double delta_d = abs(trajectory[1][end_of_path] - 4*current_lane+2);
+	//double delta_d = abs(trajectory[1][end_of_path] - 4*current_lane+2);
 	// The faster the trajectory is, the better!
-	cost = exp( -trajectory[0][end_of_path] / delta_d );*/
+	//cost = exp( -trajectory[0][end_of_path] / delta_d );
 	//std::cout << "Cost: " << cost << std::endl;
 	return cost;
 }
@@ -96,6 +96,13 @@ trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_
 	remaining_points = rest;
     unsigned int min_cost = UINT_MAX;
     
+    //std::default_random_engine dre;
+	//std::mt19937 eng(dre());
+	std::random_device rd;
+	std::normal_distribution<double> n_distrib_s(0., 25.);
+	std::normal_distribution<double> n_distrib_d(0., 1.5);
+
+
     //std::map<state, double> costs;
     
     //std::cout << "Current state: " << current_state << std::endl;
@@ -108,7 +115,7 @@ trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_
     egoPose.d = egoFrenet[1];
 
     // Allocating space for Trajectory object:
-    Trajectory traj = Trajectory(LK, egoPose);
+    Trajectory traj = Trajectory(egoPose, 0., 0.);
     Trajectory* best_next_trajectory;
 
     // Checks whether the ego vehicle has arrived at the intended lane.
@@ -129,7 +136,13 @@ trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_
 			    double cost_for_state = 0;
 
 			    // Generate new trajectory for state state_iter
-				traj = Trajectory(state_iter, egoPose);
+			    double delta_s = n_distrib_s(rd);
+			    double delta_d = n_distrib_d(rd);
+
+			    //std::cout << "delta_s: " << delta_s << std::endl;
+			    //std::cout << "delta_d: " << delta_d << std::endl;
+
+				traj = Trajectory(egoPose, delta_s, delta_d); // Add some variable parameters like delta_s, delta_d!
 
 				// Add cost function for obstacles and road departure 
 				cost_for_state += cost_function_0(traj, egoPose, vehicle_list);
@@ -145,15 +158,13 @@ trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_
 					best_next_state = state_iter;
 					best_next_trajectory = &traj;
 				}
-				// TODO!
-				return best_next_trajectory->getXY(maptool);
+				
 			}
 		}
 	}
-
-	//Trajectory traj = Trajectory(LK, egoPose);
-	//return traj.getXY(maptool);
 	
+	return best_next_trajectory->getXY(maptool);
+	//return traj.getXY(maptool);
 
 	//std::cout << "LCL:" << costs[LCL] << "\tLK:" << costs[LK] << "\tLCR:" << costs[LK] << std::endl;
 }

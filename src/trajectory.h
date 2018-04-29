@@ -8,7 +8,7 @@
 class Trajectory
 {
 	public:
-		Trajectory(state, pose);
+		Trajectory(pose, double delta_s, double delta_d);
 		~Trajectory();
 
 		trajectory_t getXY(Maptool);

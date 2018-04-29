@@ -99,13 +99,13 @@ int main() {
                         next_y_vals.push_back(previous_path_y[i]);
                     }
 
-                    if(path_size == 0)
+                    //if(path_size == 0)
                     {
                         egoPose.pos_x = car_x;
                         egoPose.pos_y = car_y;
                         egoPose.angle = deg2rad(car_yaw);
                     }
-                    else
+                    /*else
                     {
                         egoPose.pos_x = previous_path_x[path_size-1];
                         egoPose.pos_y = previous_path_y[path_size-1];
@@ -113,11 +113,11 @@ int main() {
                         double pos_x2 = previous_path_x[path_size-2];
                         double pos_y2 = previous_path_y[path_size-2];
                         egoPose.angle = atan2(egoPose.pos_y-pos_y2, egoPose.pos_x-pos_x2);
-                    }
+                    }*/
 
 
                     // Generate a list of vehicles in close proximity of ego vehicle:
-                    vector<vector<double>> vehicle_list;
+                    targetList_t vehicle_list;
                     // target_vehicle data format: []
                     for (int i=0; i<sensor_fusion.size(); ++i)
                     {
@@ -129,16 +129,20 @@ int main() {
 
                     
                     // Let state machine decide what to do next:
-                    trajectory_t traj = state_machine.evaluate_behavior(egoPose, vehicle_list, path_size);
+                    
+                    if (path_size==0)
+                    {
+                        std::cout << "== Planning new trajectory ==" << std::endl;
+                        trajectory_t traj = state_machine.evaluate_behavior(egoPose, vehicle_list, path_size);   
+                        next_x_vals = traj[0];
+                        next_y_vals = traj[1];
+                    }
 
                     // Concatenate new waypoint coordinates:
-                    next_x_vals.insert(next_x_vals.end(), traj[0].begin(), traj[0].end());
-                    next_y_vals.insert(next_y_vals.end(), traj[1].begin(), traj[1].end());
-                    //next_x_vals = traj[0];
-                    //next_y_vals = traj[1];
-
-
-                    usleep(500000);
+                    //next_x_vals.insert(next_x_vals.end(), traj[0].begin(), traj[0].end());
+                    //next_y_vals.insert(next_y_vals.end(), traj[1].begin(), traj[1].end());
+                    
+                    //usleep(500000);
 
                   	msgJson["next_x"] = next_x_vals;
                   	msgJson["next_y"] = next_y_vals;
