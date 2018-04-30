@@ -272,6 +272,10 @@ std::vector<double> Maptool::parabolicInterpol(std::vector<double> X, std::vecto
 	double yp = spl(xp);
 	double heading = atan(spl.deriv(1, xp));
 
+	heading = heading - M_PI;
+	xp += -d*sin(heading);
+	yp += d*cos(heading);
+
 	//std::cout << "xp = " << xp << "\t" << "yp = "<< yp << std::endl;
 	//std::cout << heading << std::endl;
 
