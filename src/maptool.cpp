@@ -5,6 +5,7 @@
 #include "maptool.h"
 #include <iostream>
 #include "spline.h"
+#include "common.h"
 
 Maptool::Maptool()
 {
@@ -136,7 +137,6 @@ int Maptool::ClosestWaypoint(double x, double y)
 			closestLen = dist;
 			closestWaypoint = i;
 		}
-
 	}
 
 	return closestWaypoint;
@@ -164,8 +164,6 @@ int Maptool::NextWaypoint(double x, double y, double theta)
 
 	return closestWaypoint;
 }
-
-
 
 
 
@@ -211,9 +209,9 @@ std::vector<double> Maptool::parabolicGetXY(double s, double d)
 
 	double ds_p = s - map_waypoints_s[prev_wp]; //distance in s from previous waypoint
 
-	std::vector<double> XYp = parabolicInterpol(X, Y, cubic_num, ds_p, d); // calculate x,y using the previous waypoint as the central waypoint for interpolation
+	std::vector<double> XYp = parabolicInterpol(X, Y, cubic_num+1, ds_p, d); // calculate x,y using the previous waypoint as the central waypoint for interpolation
 
-	double ds_s; // distance in s from the next waypoint
+	/*double ds_s; // distance in s from the next waypoint
 	if (prev_wp == map_waypoints_s.size() - 1 )
 		ds_s = s - max_s;  
 	else
@@ -228,106 +226,62 @@ std::vector<double> Maptool::parabolicGetXY(double s, double d)
 	double p2 = pow(ds_s,n_exp);
 	double norm =p1+p2;
 	double x = (XYp[0]*p1 + XYs[0]*p2)/(norm);
-	double y = (XYp[1]*p1 + XYs[1]*p2)/(norm);  
-	return {x,y};
-}  
+	double y = (XYp[1]*p1 + XYs[1]*p2)/(norm);
+	return {x,y};*/
+
+	return {XYp[0],XYp[1]};
+	
+
+}
+
 
 
 std::vector<double> Maptool::parabolicInterpol(std::vector<double> X, std::vector<double> Y, int center, double ds, double d) 
 {
-	if (disc_x <= 0 )  
-	{
-		//rotate reference system, so that (x,y) -> (-y,x)
-		double tx0 = -y0;
-		double tx1 = -y1;
-		double tx2 = -y2;
+	std::vector<std::vector<double>> Points_global(2);
 
-		y0 = x0;
-		y1 = x1;
-		y2 = x2;
+	Points_global[0].push_back( X[center-1] );
+	Points_global[1].push_back( Y[center-1] );
 
-		x0 = tx0;
-		x1 = tx1;
-		x2 = tx2;
+	Points_global[0].push_back( X[center] );
+	Points_global[1].push_back( Y[center] );
 
-		std::vector<double> TX;
+	Points_global[0].push_back( X[center+1] );
+	Points_global[1].push_back( Y[center+1] );
 
-		for (int i =0; i<X.size(); i++)
-		{
-			TX.push_back(-Y[i]);
-			Y[i]=X[i];
-			X[i]=TX[i];
-		}
+	//Points_global[0].push_back( X[center+2] );
+	//Points_global[1].push_back( Y[center+2] );
 
-		rotate = true;
-	}
+	double ybla = Y[center+1] - Y[center-1];
+	double xbla = X[center+1] - X[center-1];
 
+	double angle = atan2(ybla, xbla);
 
-	double X1 = X[center]-X[center]; // transform to reference system of center point
-	double X2 = X[center+abs(ds)/ds]-X[center]; // second integration limit is the previous or successive point of center, according to ds sign    
-
-	std::vector<std::vector<double>> anchor_vals(2);
-
-	anchor_vals[0].push_back( P0[0] );
-	anchor_vals[1].push_back( P0[1] );
-
-	anchor_vals[0].push_back( P1[0] );
-	anchor_vals[1].push_back( P1[1] );
-
-	anchor_vals[0].push_back( P2[0] );
-	anchor_vals[1].push_back( P2[1] );
+	global2local(Points_global, angle, X[center-1], Y[center-1]);
 
 	// Calculate splines:
 	tk::spline spl;
-	spl.set_points(anchor_vals[0], anchor_vals[1]);
+	spl.set_points(Points_global[0], Points_global[1]);
 
-	double dist1 = distance(P1[0], P1[1], P0[0], P0[1]);
-	double dist2 = distance(P2[0], P2[1], P1[0], P0[0]);
+	double dist1 = distance(X[center], Y[center], X[center-1], Y[center-1]);
+	double dist2 = distance(X[center+1], Y[center+1], X[center], Y[center]);
 
-	double ratio0 = ds / (dist1 + dist2);
+	double ratio = ds / (dist1 + dist2);
 
-	double xp = ratio0*(P2[0]-P1[0]);
+	double xp = ratio * distance(X[center+1], Y[center+1], X[center-1], Y[center-1]);
 	double yp = spl(xp);
+	double heading = atan(spl.deriv(1, xp));
 
+	//std::cout << "xp = " << xp << "\t" << "yp = "<< yp << std::endl;
+	//std::cout << heading << std::endl;
 
+	// transform back to global coordinates
+	std::vector<std::vector<double>> asd(2);
+	asd[0].push_back(xp);
+	asd[1].push_back(yp);
+	local2global(asd, angle, X[center-1], Y[center-1]);
 
-
-	double heading = atan2(2.*a*xp + b, 1.); //calculate heading of parabola at point (xp, yp=2axp+b)
-
-	// transform back to global reference system
-	xp += X[center];
-	yp += Y[center];
-
-	if (rotate)
-	{
-		//rotate back
-		double txp= xp;
-		xp = yp;
-		yp = -txp;
-
-
-		if (x1-x0 > 0.)
-		{
-			heading = heading + M_PI;
-		}
-
-		// add d offset using heading
-
-		xp += d * cos(heading);
-		yp += d * sin(heading);
-	} 
-	else 
-	{
-		if (x1-x0 < 0.)
-		{
-			heading = heading + M_PI;
-		}
-		heading = heading-M_PI/2.;
-		xp += d * cos(heading);
-		yp += d * sin(heading);  
-	}
-
-	return{xp,yp};
+	return {asd[0][0], asd[1][0]};
 }
 
 
@@ -335,90 +289,4 @@ std::vector<double> Maptool::parabolicInterpol(std::vector<double> X, std::vecto
 
 
 
-
-
-
-/*vector<vector<double>> StateMachine::generate_trajectory(state proposed_state, pose egoPose, vector<vector<double>> target_vehicles)
-{
-	// Define anchor points here:
-	vector<vector<double>> anchor_vals(2);
-	vector<vector<double>> trajectory(2);
-
-	// Define "anchor waypoints" 30, 60, and 90 meters in front of the car:
-	anchor_vals[0].push_back( egoPose.pos_x );
-	anchor_vals[1].push_back( egoPose.pos_y );
-
-	double d_1, d_2, d_3;
-
-	d_1 = 4*intended_lane+2;
-	d_2 = 4*intended_lane+2;
-	d_3 = 4*intended_lane+2;
-
-	vector<double> tmp(2);
-	tmp = maptool.getXY(egoPose.s+30, d_1);
-	anchor_vals[0].push_back( tmp[0] );
-	anchor_vals[1].push_back( tmp[1] );
-	tmp = maptool.getXY(egoPose.s+60, d_2);
-	anchor_vals[0].push_back( tmp[0] );
-	anchor_vals[1].push_back( tmp[1] );
-	tmp = maptool.getXY(egoPose.s+90, d_3);
-	anchor_vals[0].push_back( tmp[0] );
-	anchor_vals[1].push_back( tmp[1] );
-
-
-	// Target speed (in m/s):
-	const double target_inc = 0.427;
-
-	bool vehicle_ahead = false;
-
-    for (int i=0; i<target_vehicles.size(); i++)
-    {
-	    double target_d = target_vehicles[i][6];
-	    // Check if target vehicle is on the same lane
-	    if ( target_d > (d_3-2) && target_d < (d_3+2) )
-	    {
-	        double target_s = target_vehicles[i][5];
-			double target_vx = target_vehicles[i][3];
-	        double target_vy = target_vehicles[i][4];
-	        double target_speed = sqrt(target_vx*target_vx+target_vy*target_vy);
-
-	        // Check is target vehicle is on collision course
-	        if ( (egoPose.s-target_s)<50 && egoPose.s-target_s>0 && target_speed <= 50*dist_inc)
-	        	vehicle_ahead = true;
-	    }
-	}
-
-
-	if (vehicle_ahead) {
-		dist_inc -= 0.02;
-		cout << "Vehicle ahead!" << endl;
-	}
-	else if (dist_inc <= target_inc)
-		dist_inc += 0.04;
-
-
-	global2vehicle(anchor_vals, egoPose);
-	
-	//for (int i=0; i<anchor_vals[0].size(); i++)
-	//    cout << "anchor_vals: " << anchor_vals[0][i] << "\t" << anchor_vals[1][i] << endl;
-
-	// Calculate splines:
-	tk::spline spl;
-	spl.set_points(anchor_vals[0], anchor_vals[1]);
-
-	// Generate trajectory:
-	double dist = distance(0, 0, 30, spl(30));
-	int N = int (dist / dist_inc);
-
-	// In order to eliminate jiggering in longitudinal direction.
-	for(int i=1; i-1<150-remaining_points; i++)
-	{		      
-		trajectory[0].push_back(i*dist_inc);
-		trajectory[1].push_back(spl(i*dist_inc));
-	}
-
-	vehicle2global(trajectory, egoPose);
-
-	return trajectory;
-}*/
 

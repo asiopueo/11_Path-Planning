@@ -16,29 +16,29 @@ double distance(double x1, double y1, double x2, double y2)
 
 
 // Coordinate transformations:
-void global2vehicle(std::vector<std::vector<double>> &trajectory, pose ego_veh)
+void global2local(std::vector<std::vector<double>> &trajectory, double angle, double t_x, double t_y)
 {
 	double tmp_x, tmp_y;
 
 	for (int i=0; i<trajectory[0].size(); i++)
 	{
 		//cout << trajectory[0][i] << endl;
-		tmp_x = (trajectory[0][i]-ego_veh.pos_x)*cos(ego_veh.angle) + (trajectory[1][i]-ego_veh.pos_y)*sin(ego_veh.angle);
-		tmp_y = -(trajectory[0][i]-ego_veh.pos_x)*sin(ego_veh.angle) + (trajectory[1][i]-ego_veh.pos_y)*cos(ego_veh.angle);
+		tmp_x = (trajectory[0][i]-t_x)*cos(angle) + (trajectory[1][i]-t_y)*sin(angle);
+		tmp_y = -(trajectory[0][i]-t_x)*sin(angle) + (trajectory[1][i]-t_y)*cos(angle);
 			
 		trajectory[0][i] = tmp_x;
 		trajectory[1][i] = tmp_y;
     }
 }
 
-void vehicle2global(std::vector<std::vector<double>> &trajectory, pose ego_veh)
+void local2global(std::vector<std::vector<double>> &trajectory, double angle, double t_x, double t_y)
 {
 	double tmp_x, tmp_y;
 
 	for (int i=0; i<trajectory[0].size(); i++)
 	{
-		tmp_x = trajectory[0][i]*cos(ego_veh.angle) - trajectory[1][i]*sin(ego_veh.angle) + ego_veh.pos_x;
-		tmp_y = trajectory[0][i]*sin(ego_veh.angle) + trajectory[1][i]*cos(ego_veh.angle) + ego_veh.pos_y;
+		tmp_x = trajectory[0][i]*cos(angle) - trajectory[1][i]*sin(angle) + t_x;
+		tmp_y = trajectory[0][i]*sin(angle) + trajectory[1][i]*cos(angle) + t_y;
 		trajectory[0][i] = tmp_x;
 		trajectory[1][i] = tmp_y;
 	}

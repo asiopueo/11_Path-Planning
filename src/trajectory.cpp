@@ -103,8 +103,8 @@ trajectory_t Trajectory::getXY(Maptool map)
 	for (int i=0; i<trajectory[0].size(); i++) 
 	{
 		std::vector<double> tmpXY;
-		tmpXY = map.getXY(trajectory[0][i], trajectory[1][i]);
-		//tmpXY = map.parabolicGetXY(trajectory[0][i], trajectory[1][i]);
+		//tmpXY = map.getXY(trajectory[0][i], trajectory[1][i]);
+		tmpXY = map.parabolicGetXY(trajectory[0][i], trajectory[1][i]);
 		trajectory[0][i] = tmpXY[0];
 		trajectory[1][i] = tmpXY[1];
 	}

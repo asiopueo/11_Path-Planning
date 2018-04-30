@@ -16,6 +16,9 @@ using namespace std;
 // for convenience
 using json = nlohmann::json;
 
+
+
+
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
 // else the empty string "" will be returned.
@@ -35,12 +38,6 @@ string hasData(string s)
     }
     return "";
 }
-
-
-
-
-
-
 
 
 
@@ -128,7 +125,7 @@ int main() {
 
                     
                     // Let the state machine decide what to do next:
-                    if (path_size<=20)
+                    if (path_size<=10)
                     {
                         std::cout << "== Planning new trajectory ==" << std::endl;
 
@@ -139,8 +136,6 @@ int main() {
                         next_x_vals.insert(next_x_vals.end(), traj[0].begin(), traj[0].end());
                         next_y_vals.insert(next_y_vals.end(), traj[1].begin(), traj[1].end());
                     }
-                    
-                    
                     
                     
                     //usleep(500000);
