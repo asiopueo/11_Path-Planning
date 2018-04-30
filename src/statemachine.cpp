@@ -51,7 +51,6 @@ double StateMachine::cost_function_0(Trajectory &trajectory, const pose egoPose,
 		double target_d = list[i][6];
 		
 		//double target_speed = sqrt(target_vx*target_vx+target_vy*target_vy);
-
 		//std::cout << target_id << "\t" << target_x << "\t" << target_y << std::endl;
 
 		double dist_s = target_s-egoPose.s;
@@ -80,7 +79,7 @@ double StateMachine::cost_function_0(Trajectory &trajectory, const pose egoPose,
 				cost += 0;
 		}
 
-		std::cout << target_id << ":\t" << dist_s << "\t" << cost << std::endl;
+		//std::cout << target_id << ":\t" << dist_s << "\t" << cost << std::endl;
 
 		/*for (int j=0; j<20; j++)
 		{
