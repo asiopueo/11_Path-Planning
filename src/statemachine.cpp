@@ -31,9 +31,6 @@ StateMachine::StateMachine()
 StateMachine::~StateMachine() {
 }
 
-void successor_states() {
-}
-
 
 
 // Costs due to near-collision with other vehicles
@@ -59,33 +56,29 @@ double StateMachine::cost_function_0(Trajectory &trajectory, const pose egoPose,
 
 		double dist_s = target_s-egoPose.s;
 
+		if (4*intended_lane <= target_d && target_d <= 4*intended_lane+4)
+		{
+			if (-20 <= dist_s && dist_s <= 0)
+				cost += 30;
+			else if (0 <= dist_s && dist_s <= 30)
+				cost += 30;
+			else if (30 <= dist_s && dist_s <= 100)
+				cost += 15;
+			else
+				cost += 0;
+		}
 
-		//if (intended_lane!=current_lane) {
-			if (4*intended_lane <= target_d && target_d <= 4*intended_lane+4)
-			{
-				if (-20 <= dist_s && dist_s <= 0)
-					cost += 30;
-				else if (0 <= dist_s && dist_s <= 30)
-					cost += 30;
-				else if (30 <= dist_s && dist_s <= 100)
-					cost += 15;
-				else
-					cost += 0;
-			}
-		//}
-		//else {		
-			if (4*current_lane <= target_d && target_d <= 4*current_lane+4)
-			{
-				if (-20 <= dist_s && dist_s <= 0)
-					cost += 60;
-				else if (0 <= dist_s && dist_s <= 30)
-					cost += 60;
-				else if (30 <= dist_s && dist_s <= 100)
-					cost += 30;
-				else
-					cost += 0;
-			}
-		//}
+		if (4*current_lane <= target_d && target_d <= 4*current_lane+4)
+		{
+			if (-20 <= dist_s && dist_s <= 0)
+				cost += 60;
+			else if (0 <= dist_s && dist_s <= 30)
+				cost += 60;
+			else if (30 <= dist_s && dist_s <= 100)
+				cost += 30;
+			else
+				cost += 0;
+		}
 
 		std::cout << target_id << ":\t" << dist_s << "\t" << cost << std::endl;
 
