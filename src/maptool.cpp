@@ -3,7 +3,6 @@
 #include <fstream>
 #include <sstream>
 #include "maptool.h"
-#include "common.h"
 #include <iostream>
 
 
@@ -352,8 +351,6 @@ std::vector<double> Maptool::parabolicInterpol(std::vector<double> X, std::vecto
 	// EVALUATE xe2 at which the arc lenght equals |ds| with 1e-11 tolerance or with 10000000 max iterations, whatever happens first
 	while (( abs(abs(ds) - sum) > 1e-100) && (idx < 100))
 	{
-		//std::cout << "asd 01" << std::endl;
-
 		xe2 += h;
 		double u2 = 2.*a*xe2 + b;
 		double g2 = (u2*sqrt(1+u2*u2) + log(abs(sqrt(1+u2*u2) + u2))); // primitive of sqrt(1+f'(x)^2) calculated in xe2

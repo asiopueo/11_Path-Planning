@@ -48,8 +48,9 @@ int main() {
     uWS::Hub h;
     pose egoPose;
     StateMachine state_machine;
+    trajectory_t traj;
 
-    h.onMessage([&egoPose, &state_machine](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+    h.onMessage([&egoPose, &state_machine, &traj](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
         // "42" at the start of the message means there's a websocket message event.
         // The 4 signifies a websocket message
         // The 2 signifies a websocket event
@@ -99,13 +100,13 @@ int main() {
                         next_y_vals.push_back(previous_path_y[i]);
                     }
 
-                    //if(path_size == 0)
+                    if(path_size == 0)
                     {
                         egoPose.pos_x = car_x;
                         egoPose.pos_y = car_y;
                         egoPose.angle = deg2rad(car_yaw);
                     }
-                    /*else
+                    else
                     {
                         egoPose.pos_x = previous_path_x[path_size-1];
                         egoPose.pos_y = previous_path_y[path_size-1];
@@ -113,7 +114,7 @@ int main() {
                         double pos_x2 = previous_path_x[path_size-2];
                         double pos_y2 = previous_path_y[path_size-2];
                         egoPose.angle = atan2(egoPose.pos_y-pos_y2, egoPose.pos_x-pos_x2);
-                    }*/
+                    }
 
 
                     // Generate a list of vehicles in close proximity of ego vehicle:
@@ -125,22 +126,22 @@ int main() {
                             vehicle_list.push_back(sensor_fusion[i]);
                     }
 
-
-
                     
-                    // Let state machine decide what to do next:
-                    
-                    if (path_size<=10)
+                    // Let the state machine decide what to do next:
+                    if (path_size<=20)
                     {
                         std::cout << "== Planning new trajectory ==" << std::endl;
-                        trajectory_t traj = state_machine.evaluate_behavior(egoPose, vehicle_list, path_size);   
-                        next_x_vals = traj[0];
-                        next_y_vals = traj[1];
-                    }
 
-                    // Concatenate new waypoint coordinates:
-                    //next_x_vals.insert(next_x_vals.end(), traj[0].begin(), traj[0].end());
-                    //next_y_vals.insert(next_y_vals.end(), traj[1].begin(), traj[1].end());
+                        trajectory_t traj = state_machine.evaluate_behavior(egoPose, vehicle_list, path_size);
+
+                        cout << "Time for path calculations: " << time << endl;
+                        // Concatenate new waypoint coordinates:
+                        next_x_vals.insert(next_x_vals.end(), traj[0].begin(), traj[0].end());
+                        next_y_vals.insert(next_y_vals.end(), traj[1].begin(), traj[1].end());
+                    }
+                    
+                    
+                    
                     
                     //usleep(500000);
 
