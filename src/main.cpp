@@ -125,7 +125,7 @@ int main() {
 
                     
                     // Let the state machine decide what to do next:
-                    if (path_size<=10)
+                    if (path_size<=3)
                     {
                         std::cout << "== Planning new trajectory ==" << std::endl;
 

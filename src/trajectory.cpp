@@ -4,7 +4,7 @@
 Trajectory::Trajectory(pose egoPose, double delta_s, double delta_d)
 {
 	// Check traffic
-	double T = 4.2; // Total time for trajectory [sec]
+	double T = 4.5; // Total time for trajectory [sec]
 	unsigned int number_of_steps;
 
 	// Calculation for s(t):
@@ -17,7 +17,7 @@ Trajectory::Trajectory(pose egoPose, double delta_s, double delta_d)
 				3*pow(T,2), 4*pow(T,3), 5*pow(T,4),
 				6*pow(T,1), 12*pow(T,2), 20*pow(T,3);
 
-	s_i << egoPose.s, 20., 0.;
+	s_i << egoPose.s, 20., 0.;				// 50mph = 22.352 m/s
 	s_f << egoPose.s + delta_s, 20., 0.;
 
 	vector_s << s_f(0) - (s_i(0)+s_i(1)*T+0.5*s_i(2)*pow(T,2)), 
@@ -104,7 +104,7 @@ trajectory_t Trajectory::getXY(Maptool map)
 	{
 		std::vector<double> tmpXY;
 		//tmpXY = map.getXY(trajectory[0][i], trajectory[1][i]);
-		tmpXY = map.parabolicGetXY(trajectory[0][i], trajectory[1][i]);
+		tmpXY = map.getXY_spline(trajectory[0][i], trajectory[1][i]);
 		trajectory[0][i] = tmpXY[0];
 		trajectory[1][i] = tmpXY[1];
 	}

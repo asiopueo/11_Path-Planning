@@ -169,7 +169,7 @@ int Maptool::NextWaypoint(double x, double y, double theta)
 
 
 
-std::vector<double> Maptool::parabolicGetXY(double s, double d)
+std::vector<double> Maptool::getXY_spline(double s, double d)
 {
 	double max_s = 6945.554; //max s value for waypoints
 	while (s > max_s)
@@ -181,62 +181,37 @@ std::vector<double> Maptool::parabolicGetXY(double s, double d)
 	while(s > map_waypoints_s[prev_wp+1] && (prev_wp < (int)(map_waypoints_s.size()-1) ))
 		prev_wp++;
 
-	int cubic_num; //helper index of the previous waypoint
+	int cubic_num = 1; //helper index of the previous waypoint
 
 	std::vector<double> X; // X coordinates of nearest waypoints used for interpolation
 	std::vector<double> Y; // Y coordinates of nearest waypoints used for interpolation
 
-	// fill X and Y with 1 previous waypoint and 2 successive waypoints,
-	// if previous waypoint is 0 then start from the last waypoint in the map
-
-	if (prev_wp >=1) 
+	for (int i = -1; i < 3; i++)
 	{
-		cubic_num = 1;
-		for (int i = -1; i < 3; i++)
-		{
-			X.push_back( map_waypoints_x[(prev_wp + i)%map_waypoints_x.size()] );
-			Y.push_back( map_waypoints_y[(prev_wp + i)%map_waypoints_x.size()] );
-		}
-	} 
-	else {
-		cubic_num = 1;
-		for (int i = map_waypoints_x.size() -1 ; i < map_waypoints_x.size() + 3; i++)
-		{
-			X.push_back( map_waypoints_x[i%map_waypoints_x.size()] );
-			Y.push_back( map_waypoints_y[i%map_waypoints_x.size()] );
-		}
+		X.push_back( map_waypoints_x[(prev_wp + i) % map_waypoints_x.size()] );
+		Y.push_back( map_waypoints_y[(prev_wp + i) % map_waypoints_x.size()] );
 	}
 
-	double ds_p = s - map_waypoints_s[prev_wp]; //distance in s from previous waypoint
+	double ds_p = s - map_waypoints_s[prev_wp % map_waypoints_x.size()]; //distance in s from previous waypoint
+	std::vector<double> XYp = interpolation(X, Y, cubic_num+1, ds_p, d); // calculate x,y using the previous waypoint as the central waypoint for interpolation
 
-	std::vector<double> XYp = parabolicInterpol(X, Y, cubic_num+1, ds_p, d); // calculate x,y using the previous waypoint as the central waypoint for interpolation
-
-	/*double ds_s; // distance in s from the next waypoint
-	if (prev_wp == map_waypoints_s.size() - 1 )
-		ds_s = s - max_s;  
-	else
-		ds_s = s - map_waypoints_s[(prev_wp+1)];  
-
-
-	std::vector<double> XYs = parabolicInterpol(X,Y, cubic_num+1, ds_s, d); // calculate x,y using the next waypoint as the central waypoint for interpolation
+	double ds_s = s - map_waypoints_s[(prev_wp-1) % map_waypoints_x.size()];  
+	std::vector<double> XYs = interpolation(X,Y, cubic_num, ds_s, d); // calculate x,y using the next waypoint as the central waypoint for interpolation
 
 	// calculate the weighted mean of the two interpolations using the inverse sqaure of the distance from previous and next waypoint
 	int n_exp = -2;
 	double p1 = pow(ds_p,n_exp);
 	double p2 = pow(ds_s,n_exp);
-	double norm =p1+p2;
+	double norm = p1+p2;
 	double x = (XYp[0]*p1 + XYs[0]*p2)/(norm);
 	double y = (XYp[1]*p1 + XYs[1]*p2)/(norm);
-	return {x,y};*/
 
-	return {XYp[0],XYp[1]};
-	
-
+	return {x,y};
 }
 
 
 
-std::vector<double> Maptool::parabolicInterpol(std::vector<double> X, std::vector<double> Y, int center, double ds, double d) 
+std::vector<double> Maptool::interpolation(std::vector<double> X, std::vector<double> Y, int center, double ds, double d) 
 {
 	std::vector<std::vector<double>> Points_global(2);
 
@@ -248,9 +223,6 @@ std::vector<double> Maptool::parabolicInterpol(std::vector<double> X, std::vecto
 
 	Points_global[0].push_back( X[center+1] );
 	Points_global[1].push_back( Y[center+1] );
-
-	//Points_global[0].push_back( X[center+2] );
-	//Points_global[1].push_back( Y[center+2] );
 
 	double ybla = Y[center+1] - Y[center-1];
 	double xbla = X[center+1] - X[center-1];
@@ -275,9 +247,6 @@ std::vector<double> Maptool::parabolicInterpol(std::vector<double> X, std::vecto
 	heading = heading - M_PI;
 	xp += -d*sin(heading);
 	yp += d*cos(heading);
-
-	//std::cout << "xp = " << xp << "\t" << "yp = "<< yp << std::endl;
-	//std::cout << heading << std::endl;
 
 	// transform back to global coordinates
 	std::vector<std::vector<double>> asd(2);

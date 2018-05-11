@@ -121,9 +121,9 @@ trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_
 	remaining_points = rest;
     unsigned int min_cost = UINT_MAX;
     
-	std::random_device rd;
+	/*std::random_device rd;
 	std::normal_distribution<double> n_distrib_s(0., 15.);
-	std::normal_distribution<double> n_distrib_d(0., .1);
+	std::normal_distribution<double> n_distrib_d(0., .1);*/
 
     //std::map<state, double> costs;
     
@@ -178,8 +178,8 @@ trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_
 		    	dd = 4*intended_lane+2;
 
 			    // Generate new trajectory for state state_iter
-			    ds += n_distrib_s(rd);
-			    dd += n_distrib_d(rd);
+			    //ds += n_distrib_s(rd);
+			    //dd += n_distrib_d(rd);
 
 			    //std::cout << "delta_s: " << delta_s << std::endl;
 			    //std::cout << "delta_d: " << delta_d << std::endl;
