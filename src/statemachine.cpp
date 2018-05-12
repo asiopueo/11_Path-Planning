@@ -221,6 +221,8 @@ trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_
 			    //dd += n_distrib_d(rd);
 
 				//traj = Trajectory(egoPose, ds, dd, 20., 20., time_const);
+		    	double time = 2. * ds / (lane_speeds[current_lane] + lane_speeds[intended_lane] -2.);
+
 				traj = Trajectory(egoPose, ds, dd, lane_speeds[current_lane]-1, lane_speeds[intended_lane]-1, time_const);
 
 				// Add cost function for obstacles and road departure 

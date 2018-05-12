@@ -196,20 +196,21 @@ std::vector<double> Maptool::getXY_spline(double s, double d)
 	std::vector<double> XYp = interpolation(X, Y, cubic_num+1, ds_p, d); // calculate x,y using the previous waypoint as the central waypoint for interpolation
 
 	double ds_s = s - map_waypoints_s[(prev_wp-1) % map_waypoints_x.size()];  
-	std::vector<double> XYs = interpolation(X,Y, cubic_num, ds_s, d); // calculate x,y using the next waypoint as the central waypoint for interpolation
+	std::vector<double> XYs = interpolation(X, Y, cubic_num, ds_s, d); // calculate x,y using the next waypoint as the central waypoint for interpolation
 
 	// calculate the weighted mean of the two interpolations using the inverse sqaure of the distance from previous and next waypoint
 	int n_exp = -2;
-	double p1 = pow(ds_p,n_exp);
-	double p2 = pow(ds_s,n_exp);
+	double p1 = pow(s - map_waypoints_s[(prev_wp+1) % map_waypoints_x.size()], n_exp);
+	double p2 = pow(s - map_waypoints_s[(prev_wp) % map_waypoints_x.size()], n_exp);
 	double norm = p1+p2;
 	double x = (XYp[0]*p1 + XYs[0]*p2)/(norm);
 	double y = (XYp[1]*p1 + XYs[1]*p2)/(norm);
 
-	/*std::cout << XYp[0] << "\t\t" << XYs[0] << std::endl;
+	std::cout << XYp[0] << "\t\t" << XYs[0] << std::endl;
 	std::cout << p1 << "\t\t" << p2 << std::endl;
-	std::cout << x << std::endl;*/
+	std::cout << x << std::endl;
 
+	//return {XYp[0], XYp[1]};
 	return {x,y};
 }
 
