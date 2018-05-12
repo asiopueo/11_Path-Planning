@@ -1,10 +1,10 @@
 #include "trajectory.h"
 #include <iostream>
 
-Trajectory::Trajectory(pose egoPose, double delta_s, double delta_d)
+Trajectory::Trajectory(pose egoPose, double delta_s, double delta_d, double current_speed, double target_speed, double time_T)
 {
 	// Check traffic
-	double T = 4.5; // Total time for trajectory [sec]
+	T = time_T; // Total time for trajectory [sec]
 	unsigned int number_of_steps;
 
 	// Calculation for s(t):
@@ -17,8 +17,8 @@ Trajectory::Trajectory(pose egoPose, double delta_s, double delta_d)
 				3*pow(T,2), 4*pow(T,3), 5*pow(T,4),
 				6*pow(T,1), 12*pow(T,2), 20*pow(T,3);
 
-	s_i << egoPose.s, 20., 0.;				// 50mph = 22.352 m/s
-	s_f << egoPose.s + delta_s, 20., 0.;
+	s_i << egoPose.s, current_speed, 0.;	// 50mph = 22.352 m/s
+	s_f << egoPose.s + delta_s, target_speed, 0.;
 
 	vector_s << s_f(0) - (s_i(0)+s_i(1)*T+0.5*s_i(2)*pow(T,2)), 
 				s_f(1) - (s_i(1)+s_i(2)*T), 
@@ -35,7 +35,7 @@ Trajectory::Trajectory(pose egoPose, double delta_s, double delta_d)
 				6*pow(T,1), 12*pow(T,2), 20*pow(T,3);
 
 	d_i << egoPose.d, 0., 0.;
-	d_f << delta_d, 0., 0.;
+	d_f << egoPose.d + delta_d, 0., 0.;
 
 	vector_d << d_f(0) - (d_i(0)+d_i(1)*T+0.5*d_i(2)*pow(T,2)), 
 				d_f(1) - (d_i(1)+d_i(2)*T), 
@@ -77,22 +77,34 @@ double Trajectory::evaluate_s(double t)
 double Trajectory::evaluate_d(double t)
 {
 	double sum = 0;
-	for (int i=0; i<6; i++)
+	for (int i=0; i<6 ; i++)
 		sum += coeffs_d(i) * pow(t,i);
 	
 	return sum;
 }
 
+/*double Trajectory::getFinal_s()
+{
+	
+	return s;
+}
+
+double Trajectory::getFinal_d()
+{
+	return d;
+}*/
+
+
+
 trajectory_t Trajectory::getXY(Maptool map)
 {
 	trajectory_t trajectory(2);
-	double T = 4.2;
 
 	// Prefactor of 50 accounts for 50Hz/20ms update frequency
 	int number_of_steps = T / 0.02;
 
 	// In order to eliminate jiggering in longitudinal direction.
-	for(int i=0; i < number_of_steps; i++)
+	for(int i=0; i < number_of_steps+1 ; i++)
 	{		      
 		trajectory[0].push_back(evaluate_s(0.02*i));
 		trajectory[1].push_back(evaluate_d(0.02*i));

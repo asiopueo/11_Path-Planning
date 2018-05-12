@@ -5,6 +5,7 @@
 #include <thread>
 #include <vector>
 #include "json.hpp"
+#include <cmath>
 #include <iostream>
 
 // State Machine for Ego-vehicle behavior
@@ -91,6 +92,7 @@ int main() {
                     // TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
                     int path_size = previous_path_x.size();
 
+
                     for (int i=0; i<path_size; ++i)
                     {
                         next_x_vals.push_back(previous_path_x[i]);
@@ -125,13 +127,12 @@ int main() {
 
                     
                     // Let the state machine decide what to do next:
-                    if (path_size<=3)
+                    if (path_size<=30)
                     {
-                        std::cout << "== Planning new trajectory ==" << std::endl;
-
+                        std::cout << std::endl << "===== Planning new trajectory =====" << std::endl;
                         trajectory_t traj = state_machine.evaluate_behavior(egoPose, vehicle_list, path_size);
 
-                        cout << "Time for path calculations: " << time << endl;
+                        //cout << "Time for path calculations: " << time << endl;
                         // Concatenate new waypoint coordinates:
                         next_x_vals.insert(next_x_vals.end(), traj[0].begin(), traj[0].end());
                         next_y_vals.insert(next_y_vals.end(), traj[1].begin(), traj[1].end());
