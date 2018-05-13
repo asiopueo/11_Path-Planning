@@ -1,6 +1,3 @@
-<script type="text/javascript"
-        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_CHTML"></script>
-
 # Udacity SDC Nanodegree
 ## Term 3 - Project 11
 ## Path Planning Project
@@ -58,20 +55,22 @@ The Trajectory Class accepts the total time delta_T as input as well as initial 
 The getXY()-function is of critical importance. As described above, it had to be modified in order to become useful.
 
 The algorithm makes use of the spline library by T.?. It picks the closest two map points in front of the ego vehicle, and the closest two map points behind it. It then generates two spline curves between the first three points and the last three points.
-The two splines are not identical in the section between points 1 and 2. In order to find a smooth approximation for the whole track, we define the following weights: p=d_1^{-2} and q=d_2^{-2}.
+The two splines are not identical in the section between points 1 and 2. In order to find a smooth approximation for the whole track, we define the following weights: ![d_1](https://latex.codecogs.com/gif.latex?p%20%3D%20d_2%5E%7B-2%7D) and ![d_2](https://latex.codecogs.com/gif.latex?q%3D%20d_1%5E%7B-2%7D).
 
 Norm = 1/(p+q)
 
 This norm has the advantage that
-\\[
   \lim_{p\to} Norm = 1
-\\]
 
 In short, if the ego vehicle approaches point 2 (i.e. d_2\to 0 and d_1\to ??),
-\lim
+
+![](https://latex.codecogs.com/gif.latex?%5Clim_%7Bp%5Cto%200%7D%20%5Cfrac%7Bp%7D%7Bn%7D%20%3D%20%5Clim_%7Bp%5Cto%200%7D%20%5Cfrac%7B1%7D%7B1&plus;p%5E2/q%5E2%7D%20%3D%201)
+
+![](https://latex.codecogs.com/gif.latex?%5Clim_%7Bq%20%5Cto%200%7D%20%5Cfrac%7Bq%7D%7Bn%7D%20%3D%20%5Clim_%7Bq%20%5Cto%200%7D%20%5Cfrac%7B1%7D%7B1&plus;p%5E2/q%5E2%7D%20%3D%200)
 
 Whereas, if the ego vehicle approaches point 1 (think of reversing time), we have d_2\to ?? and d_1\to 0, hence
-\lim
+
+
 
 What then happens when the ego vehicle crosses point 2 is rather obvious: A new point is added as point 4, and point 0 is eliminated from the list.
 
