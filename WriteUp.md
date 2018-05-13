@@ -1,3 +1,6 @@
+<script type="text/javascript"
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS_CHTML"></script>
+
 # Udacity SDC Nanodegree
 ## Term 3 - Project 11
 ## Path Planning Project
@@ -60,8 +63,9 @@ The two splines are not identical in the section between points 1 and 2. In orde
 Norm = 1/(p+q)
 
 This norm has the advantage that
-
-\lim_{p\to} Norm = 1
+\\[
+  \lim_{p\to} Norm = 1
+\\]
 
 In short, if the ego vehicle approaches point 2 (i.e. d_2\to 0 and d_1\to ??),
 \lim
