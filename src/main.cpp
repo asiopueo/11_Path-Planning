@@ -127,7 +127,7 @@ int main() {
 
                     
                     // Let the state machine decide what to do next:
-                    if (path_size <= 8)
+                    if (path_size <= 18)
                     {
                         std::cout << std::endl << "===== Planning new trajectory =====" << std::endl;
                         trajectory_t traj = state_machine.evaluate_behavior(egoPose, vehicle_list, path_size);

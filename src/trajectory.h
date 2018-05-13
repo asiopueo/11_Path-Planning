@@ -12,6 +12,7 @@ class Trajectory
 		~Trajectory();
 
 		trajectory_t getXY(Maptool map);
+		double getTime();
 		//double getFinal_s();
 		//double getFinal_d();
 		double evaluate_s(double t);

@@ -102,9 +102,9 @@ trajectory_t Trajectory::getXY(Maptool map)
 
 	// Prefactor of 50 accounts for 50Hz/20ms update frequency
 	int number_of_steps = T / 0.02;
-
+	std::cout << "number_of_steps: " << number_of_steps << std::endl;
 	// In order to eliminate jiggering in longitudinal direction.
-	for(int i=0; i < number_of_steps+1 ; i++)
+	for(int i=0; i < number_of_steps ; i++)
 	{		      
 		trajectory[0].push_back(evaluate_s(0.02*i));
 		trajectory[1].push_back(evaluate_d(0.02*i));
@@ -125,6 +125,10 @@ trajectory_t Trajectory::getXY(Maptool map)
 }
 
 
+double Trajectory::getTime()
+{
+	return T;
+}
 
 
 

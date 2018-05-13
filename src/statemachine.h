@@ -36,7 +36,7 @@ class StateMachine {
 		int remaining_points;
 		double d_prev; 
 		double s_prev;
-
+		double v_prev;
 
 		unsigned int current_lane;
 		unsigned int intended_lane;
@@ -46,7 +46,7 @@ class StateMachine {
 		std::vector<double> weights;
 		double cost_function_0(Trajectory &, const pose, const targetList_t, Maptool);
 		double cost_function_1(const Trajectory &, double delta_s, double delta_d);
-		std::vector<double> lane_speeds_fct(const targetList_t);
+		std::vector<double> lane_speeds_fct(const pose egoPose, const targetList_t);
 };
 
 

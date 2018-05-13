@@ -1,7 +1,7 @@
 #include "statemachine.h"
 
 #include <random>
-
+#include <cmath>
 
 StateMachine::StateMachine()
 {
@@ -101,7 +101,7 @@ double StateMachine::cost_function_1(const Trajectory &trajectory, double ds, do
 
 
 
-std::vector<double> StateMachine::lane_speeds_fct(targetList_t list)
+std::vector<double> StateMachine::lane_speeds_fct(const pose egoPose, targetList_t list)
 {
 	std::vector<double> lane_list = {0.,0.,0.};
 	std::vector<int> car_counter = {0,0,0};
@@ -112,12 +112,15 @@ std::vector<double> StateMachine::lane_speeds_fct(targetList_t list)
 		double target_vx = list[i][3];
 		double target_vy = list[i][4];
 		double target_d = list[i][6];
+		double target_s = list[i][5];
+
+		double dist_s = target_s-egoPose.s;
 
 		double v = sqrt(target_vx*target_vx + target_vy*target_vy);
 
 		for (int lane=0; lane<3; lane++)
 		{
-			if (4*lane <= target_d && target_d <= 4*(lane+1))
+			if (dist_s > 0 && 4*lane <= target_d && target_d <= 4*(lane+1))
 			{
 				// Don't forget to divide!
 				lane_list[lane] += v;
@@ -130,7 +133,7 @@ std::vector<double> StateMachine::lane_speeds_fct(targetList_t list)
 		if (car_counter[lane] != 0)
 			lane_list[lane] /= (double) car_counter[lane];
 		else
-			lane_list[lane] = 22.352;
+			lane_list[lane] = 22.352; // v_max
 
 	return lane_list;
 }
@@ -143,7 +146,6 @@ trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_
 	remaining_points = rest;
     unsigned int min_cost = UINT_MAX;
     
-    double time_const = 4.5;
     std::vector<double> lane_speeds;
 
 	/*std::random_device rd;
@@ -157,11 +159,12 @@ trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_
     //	cout << iter[0] << endl;
 
 	// Frenet coordinates of ego-vehicle:
-	if (rest ==0)
+	if (rest == 0)
     {
     	std::vector<double> egoFrenet = maptool.getFrenet(egoPose.pos_x, egoPose.pos_y, egoPose.angle);
     	egoPose.s = egoFrenet[0];
     	egoPose.d = egoFrenet[1];
+    	v_prev=0.;
     }
     else
     {
@@ -169,9 +172,9 @@ trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_
     	egoPose.d = d_prev;
     }
 
-    // Allocating space for Trajectory object:
-    Trajectory traj = Trajectory(egoPose, 0., 0., 0., 0., time_const);
-    Trajectory best_next_trajectory = Trajectory(egoPose, 0., 0., 0., 0., time_const);
+    // Allocating space on stack for Trajectory object:
+    Trajectory traj = Trajectory(egoPose, 0., 0., 0., 0., 1.);
+    Trajectory best_next_trajectory = Trajectory(egoPose, 0., 0., 0., 0., 1.);
 
     // Checks whether the ego vehicle has arrived at the intended lane.
     if (abs(egoPose.d-4*intended_lane+2) < 5.) {
@@ -180,8 +183,8 @@ trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_
     }
 
 	// Average speed per lane. If a lane is clear, then choose maximum speed (50mph).
-    lane_speeds = lane_speeds_fct(vehicle_list); 
-
+    lane_speeds = lane_speeds_fct(egoPose, vehicle_list); 
+    double delta_t;
 
     for (int i=0; i<3;i++) 
     	std::cout << "\tLane: " << i << ": " << lane_speeds[i] << "\t";
@@ -192,7 +195,7 @@ trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_
     {
 		// Excluding the cases where the ego vehicle is on the left lane or the right land and considers lane change 
 		// to nonexisting lanes.
-	    if (!(state_iter==LCL && egoPose.d<=4) && !(state_iter==LCR && egoPose.d>=8))
+	    if (!(state_iter == LCL && egoPose.d <= 4.) && !(state_iter == LCR && egoPose.d >= 8.))
 	    {
 	    	// One more for-loop here!
 	    	for (int j=0; j<3; j++)
@@ -213,7 +216,7 @@ trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_
 		    			break;
 		    	}
 
-		    	dd = 4*intended_lane+2-egoPose.d;
+		    	dd = (4*intended_lane + 2) - egoPose.d;
 		    	ds = 90.;
 
 			    // Generate new trajectory for state state_iter
@@ -221,9 +224,10 @@ trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_
 			    //dd += n_distrib_d(rd);
 
 				//traj = Trajectory(egoPose, ds, dd, 20., 20., time_const);
-		    	double time = 2. * ds / (lane_speeds[current_lane] + lane_speeds[intended_lane] -2.);
-
-				traj = Trajectory(egoPose, ds, dd, lane_speeds[current_lane]-1, lane_speeds[intended_lane]-1, time_const);
+		    	delta_t = 2. * ds / (v_prev + lane_speeds[intended_lane]-1.);	// why doesn't this work?!?
+		    	delta_t = floor(50. * delta_t) / 50.;
+		    	
+				traj = Trajectory(egoPose, ds, dd, v_prev, lane_speeds[intended_lane]-1, delta_t);
 
 				// Add cost function for obstacles and road departure 
 				cost_for_state += cost_function_0(traj, egoPose, vehicle_list, maptool);
@@ -257,8 +261,11 @@ trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_
 
     std::cout << "current_lane: " << current_lane << "\t | intended_lane: " << intended_lane << std::endl;
 
-	d_prev = best_next_trajectory.evaluate_d(time_const);
-	s_prev = best_next_trajectory.evaluate_s(time_const);
+    delta_t = best_next_trajectory.getTime();
+    std::cout << delta_t << std::endl;
+	d_prev = best_next_trajectory.evaluate_d(delta_t);
+	s_prev = best_next_trajectory.evaluate_s(delta_t);
+	v_prev = lane_speeds[intended_lane]-1;
 
 	return best_next_trajectory.getXY(maptool);
 }

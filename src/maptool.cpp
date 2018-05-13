@@ -206,11 +206,6 @@ std::vector<double> Maptool::getXY_spline(double s, double d)
 	double x = (XYp[0]*p1 + XYs[0]*p2)/(norm);
 	double y = (XYp[1]*p1 + XYs[1]*p2)/(norm);
 
-	std::cout << XYp[0] << "\t\t" << XYs[0] << std::endl;
-	std::cout << p1 << "\t\t" << p2 << std::endl;
-	std::cout << x << std::endl;
-
-	//return {XYp[0], XYp[1]};
 	return {x,y};
 }
 
