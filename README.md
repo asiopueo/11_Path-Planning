@@ -1,140 +1,150 @@
-# CarND-Path-Planning-Project
-Self-Driving Car Engineer Nanodegree Program
-   
-### Simulator.
-You can download the Term3 Simulator which contains the Path Planning Project from the [releases tab (https://github.com/udacity/self-driving-car-sim/releases).
-
-### Goals
-In this project your goal is to safely navigate around a virtual highway with other traffic that is driving +-10 MPH of the 50 MPH speed limit. You will be provided the car's localization and sensor fusion data, there is also a sparse map list of waypoints around the highway. The car should try to go as close as possible to the 50 MPH speed limit, which means passing slower traffic when possible, note that other cars will try to change lanes too. The car should avoid hitting other cars at all cost as well as driving inside of the marked road lanes at all times, unless going from one lane to another. The car should be able to make one complete loop around the 6946m highway. Since the car is trying to go 50 MPH, it should take a little over 5 minutes to complete 1 loop. Also the car should not experience total acceleration over 10 m/s^2 and jerk that is greater than 10 m/s^3.
-
-#### The map of the highway is in data/highway_map.txt
-Each waypoint in the list contains  [x,y,s,dx,dy] values. x and y are the waypoint's map coordinate position, the s value is the distance along the road to get to that waypoint in meters, the dx and dy values define the unit normal vector pointing outward of the highway loop.
-
-The highway's waypoints loop around so the frenet s value, distance along the road, goes from 0 to 6945.554.
-
-## Basic Build Instructions
-
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./path_planning`.
-
-Here is the data provided from the Simulator to the C++ Program
-
-#### Main car's localization Data (No Noise)
-
-["x"] The car's x position in map coordinates
-
-["y"] The car's y position in map coordinates
-
-["s"] The car's s position in frenet coordinates
-
-["d"] The car's d position in frenet coordinates
-
-["yaw"] The car's yaw angle in the map
-
-["speed"] The car's speed in MPH
-
-#### Previous path data given to the Planner
-
-//Note: Return the previous list but with processed points removed, can be a nice tool to show how far along
-the path has processed since last time. 
-
-["previous_path_x"] The previous list of x points previously given to the simulator
-
-["previous_path_y"] The previous list of y points previously given to the simulator
-
-#### Previous path's end s and d values 
-
-["end_path_s"] The previous list's last point's frenet s value
-
-["end_path_d"] The previous list's last point's frenet d value
-
-#### Sensor Fusion Data, a list of all other car's attributes on the same side of the road. (No Noise)
-
-["sensor_fusion"] A 2d vector of cars and then that car's [car's unique ID, car's x position in map coordinates, car's y position in map coordinates, car's x velocity in m/s, car's y velocity in m/s, car's s position in frenet coordinates, car's d position in frenet coordinates. 
-
-## Details
-
-1. The car uses a perfect controller and will visit every (x,y) point it recieves in the list every .02 seconds. The units for the (x,y) points are in meters and the spacing of the points determines the speed of the car. The vector going from a point to the next point in the list dictates the angle of the car. Acceleration both in the tangential and normal directions is measured along with the jerk, the rate of change of total Acceleration. The (x,y) point paths that the planner recieves should not have a total acceleration that goes over 10 m/s^2, also the jerk should not go over 50 m/s^3. (NOTE: As this is BETA, these requirements might change. Also currently jerk is over a .02 second interval, it would probably be better to average total acceleration over 1 second and measure jerk from that.
-
-2. There will be some latency between the simulator running and the path planner returning a path, with optimized code usually its not very long maybe just 1-3 time steps. During this delay the simulator will continue using points that it was last given, because of this its a good idea to store the last points you have used so you can have a smooth transition. previous_path_x, and previous_path_y can be helpful for this transition since they show the last points given to the simulator controller with the processed points already removed. You would either return a path that extends this previous path or make sure to create a new path that has a smooth transition with this last path.
-
-## Tips
-
-A really helpful resource for doing this project and creating smooth trajectories was using http://kluge.in-chemnitz.de/opensource/spline/, the spline function is in a single hearder file is really easy to use.
-
----
-
-## Dependencies
-
-* cmake >= 3.5
- * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools]((https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
-* [uWebSockets](https://github.com/uWebSockets/uWebSockets)
-  * Run either `install-mac.sh` or `install-ubuntu.sh`.
-  * If you install from source, checkout to commit `e94b6e1`, i.e.
-    ```
-    git clone https://github.com/uWebSockets/uWebSockets 
-    cd uWebSockets
-    git checkout e94b6e1
-    ```
-
-## Editor Settings
-
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
-
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
-
-## Code Style
-
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
-
-## Project Instructions and Rubric
-
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+# Udacity SDC Nanodegree
+## Term 3 - Project 11
+## Path Planning Project
 
 
-## Call for IDE Profiles Pull Requests
+The aim of this project was to write a path planner for the term 3 simulator.
 
-Help your fellow students!
+*Machine setup:*
+* Intel i5-6500 CPU
+* 16GB RAM
+* Nvidia GTX 1060 GPU, 6GB VRAM
+* Linux Mint 18 (based on Ubuntu 16.04)
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to ensure
-that students don't feel pressured to use one IDE or another.
+*Problems encountered:*
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+* `getXY()`-function was unsuitable for transforming the quintic curve (s(t),d(t)) into Cartesian coordinates. Inspection of this function revealed that it utilizes linear interpolation between the 42 map points. This however leads to the phenomenon that the curved line will be broken at the map points.
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
 
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
+#### Behavior Planner
+The Behavior Planner is based on the principle that it plans a trajectory of a fixed distance of ![](https://latex.codecogs.com/gif.latex?%5CDelta%20s) ahead of the ego vehicle (![](https://latex.codecogs.com/gif.latex?%5CDelta%20s) = 90 meters).
+The Trajectory Class accepts the total
 
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+* LC - Lane Keep
+* LCL - Lane Change Left
+* LCR - Lane Change Right
 
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
+Figure ?? illustrates the state machine:
 
+![](./images/Drawing1.png)
+
+`current_lane` switches to `intended_lane` when the ego vehicle has entered the intended lane.
+
+As indicated in the following figure, we subdivide the road in front of the vehicle (and to some extend also behind) into "buckets":
+
+A for-loop iterates over all cars in the proximity of the ego vehicle (these where already filtered in a loop in the main()-function) and places them into a backet.
+Each bucket has a certain cost. For example, cars farer away from the ego-vehicle are given a lower cost, and vehicles in the proximity of the ego vehicle are given a higher cost.
+
+![](./images/Drawing2.png)
+
+
+A second cost function is designed relatively straightforward
+
+The advantage of this "bucket-approach" seems to be much less dependency on the cost-functions' weight, and therefore less need for fine-tuning. Also, the complexity of the operation is significantly less than other approaches like tracing the trajectories of the target vehicles.
+
+
+
+#### Trajectory Generation
+The Trajectory Class accepts the total time ![](https://latex.codecogs.com/gif.latex?%5CDelta%20T) as input as well as initial and final positions, and initial and final longitudinal velocities. The total time ensures that the mean speed along the interior of the trajectory stays in a range definied by the initial and final velocities. E.g., choosing ![](https://latex.codecogs.com/gif.latex?%5CDelta%20T) relatively large leads to the ego vehicle first decelerating and then accelerating again. Choosing ![](https://latex.codecogs.com/gif.latex?%5CDelta%20T) relatively large leads to the ego vehicle first accelerating and then decelerating again.
+
+
+
+#### getXY()-function
+The `getXY()`-function is of critical importance. As described above, it had to be modified in order to become useful.
+
+![](https://latex.codecogs.com/gif.latex?%5C%7B%20P_0%2C%20P_1%2C%20P_2%2C%20P_3%20%5C%7D)
+
+We denote by K_1(t) the spline generated by the three points ![](https://latex.codecogs.com/gif.latex?%5Cmathcal%7BK%7D_0%20%3D%20%5C%7B%20P_0%2C%20P_1%2C%20P_2%20%5C%7D)
+(red line in the illustration), and by K_2 the spline generated by
+![](https://latex.codecogs.com/gif.latex?%5Cmathcal%7BK%7D_1%20%3D%20%5C%7B%20P_1%2C%20P_2%2C%20P_3%20%5C%7D) (green line).
+The interpolated line is the blue one.
+
+
+The interpolation algorithm makes use of an interesting idea by fellow *Udacity SDC-ND student* [Piermarco Pascale][1].  He proposed a norm
+However, as his approach is incredibly accurate, it is - due to it's computational complexity - useless for practical purposes. We modified it by exchanging the integration part with splines. For a detailed description of algorithm, cf. the description below.
+
+As for he spline library, we make use of the [library by Tino Kluge][2], as suggested in the lectures. It picks the closest two map points in front of the ego vehicle, and the closest two map points behind it. It then generates two spline curves between the first three points and the last three points.
+
+![](./images/Drawing3.png)
+
+The two splines are not identical in the section between points ![](https://latex.codecogs.com/gif.latex?P_1) and ![](https://latex.codecogs.com/gif.latex?P_2). Let ![](https://latex.codecogs.com/gif.latex?d_1) and ![](https://latex.codecogs.com/gif.latex?d_2) be the s-distance of the car to ![](https://latex.codecogs.com/gif.latex?P_2) and ![](https://latex.codecogs.com/gif.latex?P_1), respectively. In order to find a smooth approximation for the whole track, we define the following weights:
+
+![](https://latex.codecogs.com/gif.latex?p%20%3D%20d_2%5E%7B-2%7D) and ![](https://latex.codecogs.com/gif.latex?q%3D%20d_1%5E%7B-2%7D).
+
+We then define further:
+![](https://latex.codecogs.com/gif.latex?n%20%3D%20p&plus;q)
+
+The interpolated XY-position is then defined as:
+
+![](https://latex.codecogs.com/gif.latex?X%28s%2Cd%29%20%3D%20%5Cfrac%7Bp%20%5Ccdot%20K_1%28s%29%20&plus;%20q%20%5Ccdot%20K_2%28s%29%7D%7Bn%7D)
+
+In order to understand the meaning of this expression, consider again the diagram above: The ego vehicle is by definition located in between the two points ![](https://latex.codecogs.com/gif.latex?P_0) and ![](https://latex.codecogs.com/gif.latex?P_1). As it continues to drive forward, the distance to ![](https://latex.codecogs.com/gif.latex?P_0), becomes larger, i.e. ![](https://latex.codecogs.com/gif.latex?d_1%20%5Cto%20%5CDelta%20d)),
+and the distance to ![](https://latex.codecogs.com/gif.latex?P_1) becomes smaller, i.e. ![](https://latex.codecogs.com/gif.latex?d_2%20%5Cto%200).
+So for the interpolated position:
+
+![](https://latex.codecogs.com/gif.latex?%5Clim_%7Bs%5Cto%20P_2%7D%20%5Cfrac%7Bp%5Ccdot%20K_1%28s%29&plus;q%5Ccdot%20K_2%28s%29%7D%7Bn%7D%20%3D%20%5Clim_%7Bs%5Cto%20P_2%7D%20%5Cfrac%7Bp%7D%7Bn%7D%20K_1%28s%29%20&plus;%20%5Clim_%7Bs%5Cto%20P_2%7D%20%5Cfrac%7Bq%7D%7Bn%7D%20K_2%28s%29%3D%200%20&plus;%20K_2%28P_2%29)
+
+since
+
+![](https://latex.codecogs.com/gif.latex?%5Clim_%7Bs%5Cto%20P_1%7D%20%5Cfrac%7Bp%7D%7Bn%7D%20%3D%20%5Clim_%7Bq%5Cto%20%5Cinfty%7D%20%5Cfrac%7B1%7D%7B1&plus;q%5E2/p%5E2%7D%20%3D%200)
+
+and
+
+![](https://latex.codecogs.com/gif.latex?%5Clim_%7Bs%5Cto%20P_1%7D%20%5Cfrac%7Bq%7D%7Bn%7D%20%3D%20%5Clim_%7Bq%5Cto%20%5Cinfty%7D%20%5Cfrac%7B1%7D%7B1&plus;p%5E2/q%5E2%7D%20%3D%201)
+
+We see that the contribution of the first spline, ![](https://latex.codecogs.com/gif.latex?K_1), is zero when the ego vehicle located at ![](https://latex.codecogs.com/gif.latex?P_2). As soon as the ego vehicle crosses this point, ![](https://latex.codecogs.com/gif.latex?P_0) is deleted from the list of waypoints, and the next point ahead of ![](https://latex.codecogs.com/gif.latex?P_3) is added. If the new list of points is
+
+![](https://latex.codecogs.com/gif.latex?%5C%7BP%27_0%2C%20P%27_1%2C%20P%27_2%2C%20P%27_3%5C%7D),
+
+then ![](https://latex.codecogs.com/gif.latex?P%27_2%3DP_3), ![](https://latex.codecogs.com/gif.latex?P%27_1%3DP_2), and ![](https://latex.codecogs.com/gif.latex?P%27_0%3DP_1).
+
+The interpolation is can be done with new splines ![](https://latex.codecogs.com/gif.latex?K%27_2) and ![](https://latex.codecogs.com/gif.latex?K%27_1) where ![](https://latex.codecogs.com/gif.latex?K%27_1%3DK_2).
+
+
+
+
+## Analysis
+
+#### Failed attempts
+Since there were only relatively little guidelines for this project,
+
+**Stochastic trajectory generation**
+By this we mean choosing random endpoints for the trajectories and choosing the one with the lowest costs. The problem with this approach is that while it worked in principle, it has eaten too many resources.
+
+**Calculating cost of trajectory**
+I.e. predicting the movement of each target vehicle and calculating collision trajectories. Again, this methods has taken too much resources. Calculating a few dozen trajectories takes a few seconds.
+
+
+
+#### Possible Modifications
+One possible modification which I have only shortly delved into is the possibility to enable near real-time path planning akin to the MPC project.
+
+
+
+#### Comment on the Provided Framework
+Most students I have communicated with share the same opinion that fixing the was quite distracting from the primary objective of
+
+First of all, instead of relying on a single `main.cpp`-file, I chose to split the code into several different files. These are (omitting header files)
+
+* `main.cpp`: Contains the main loop which communicates with
+* `statemachine.cpp`: Contains the state machine and cost functions
+* `trajectory.cpp`: Contains the `Trajectory`-class
+* `common.cpp`: A collection of functions, such as affine coordinate transformations
+* `maptool.cpp`:
+
+
+
+
+## Conclusion
+Although the project was extremely interesting, the largest portion of time had to be dedicated to secondary objectives. These included trying out new architectures for the code, and rewriting helper functions, especially the notorious `getXY()`.
+One lesson I have learned is that computational complexity is a huge issue when developing algorithms for self-driving cars. Concepts which have been introduced in the lectures, for example stochastic trajectory generation seem to be unfeasible for usage in the simulator.
+
+At the time of submission, I have not been fully satisfied by the architecture I have developed.
+
+
+The latex-graphics were generated by https://www.codecogs.com/eqnedit.php.
+
+
+[1]: https://discussions.udacity.com/t/a-more-refined-getxy-function/666827
+[2]: http://kluge.in-chemnitz.de/opensource/spline/
