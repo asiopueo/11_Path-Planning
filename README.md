@@ -1,78 +1,147 @@
-# Udacity SDC Nanodegree
+# Udacity Self-driving Car Nanodegree
 ## Term 3 - Project 11
-## Path Planning Project
+# Path Planning Project
+---
+
+## Build and Run Instruction
+It is advised to create a separate build directory, e.g., `build/`, before launching cmake and make.
+The program can then be launched by typing in `/path_planning`.
+Make sure that the Udacity term 3 simulator for the path planning project is running in the background.
+
+## Introduction
+The aim of this project is to write a path planner for the term 3 simulator. The basic scenario is a simulated non-exit 3-lane highway with intermediate traffic density. The outline of the highway is as follows (source of plot: Udacity forum):
+
+![](./images/waypoints.png)
+
+In order to help the car navigate along the highway, 42 predefined waypoints are given and listed in `data/highway_map.csv`.
+
+Although the dimensions are never really clarified, it assumed that the waypoint-coordinates are measured in meters.
 
 
-The aim of this project was to write a path planner for the term 3 simulator.
-
-*Machine setup:*
-* Intel i5-6500 CPU
-* 16GB RAM
-* Nvidia GTX 1060 GPU, 6GB VRAM
-* Linux Mint 18 (based on Ubuntu 16.04)
-
-*Problems encountered:*
-
-* `getXY()`-function was unsuitable for transforming the quintic curve (s(t),d(t)) into Cartesian coordinates. Inspection of this function revealed that it utilizes linear interpolation between the 42 map points. This however leads to the phenomenon that the curved line will be broken at the map points.
 
 
 
-#### Behavior Planner
+## Behavior Planner
 The Behavior Planner is based on the principle that it plans a trajectory of a fixed distance of ![](https://latex.codecogs.com/gif.latex?%5CDelta%20s) ahead of the ego vehicle (![](https://latex.codecogs.com/gif.latex?%5CDelta%20s) = 90 meters).
-The Trajectory Class accepts the total
+
+
+#### State Machine
+The state machine is very primitive and consists of only three states:
 
 * LC - Lane Keep
 * LCL - Lane Change Left
 * LCR - Lane Change Right
 
-Figure ?? illustrates the state machine:
+The next figure illustrates the state machine:
 
 ![](./images/Drawing1.png)
 
-`current_lane` switches to `intended_lane` when the ego vehicle has entered the intended lane.
+State transitions can only occur when the ego vehicle has traversed the preplanned trajectory and are based on a cost-function system. This is certainly not a very realistic concept, but it deals with the limitations of the simulator. It would be desirable to enable the vehicle to evaluate its state every predefined time interval (such as every 20 ms). This seems to require some trickery with the simulator and should be possible, but is unfortunately out of the scope at the time of this writing.
 
-As indicated in the following figure, we subdivide the road in front of the vehicle (and to some extend also behind) into "buckets":
+State transitions are evaluated as follows: Depending on the current lane the ego vehicle resides (stored in the variable `current_lane`), two or three trajectories are created. On or two for lane changes and one for staying on the lane. The trajectory constructor receives - apart from the obvious ego vehicle kinematics - information on the average traffic speed in each lane.
 
-A for-loop iterates over all cars in the proximity of the ego vehicle (these where already filtered in a loop in the main()-function) and places them into a backet.
-Each bucket has a certain cost. For example, cars farer away from the ego-vehicle are given a lower cost, and vehicles in the proximity of the ego vehicle are given a higher cost.
+Each of the trajectory candidates is then evaluated by the cost functions as described below. The trajectory with the lowest costs will be the next to be pursued.
+
+
+
+#### Cost Functions
+The state machine has two different cost functions:
+
+* `cost_function_traffic()`
+* `cost_function_behavior()`
+
+Of these to, we shall mainly focus on `cost_function_traffic()`, as the second one is designed relatively straightforward and follows the study material offered in the lessons.
+
+As indicated in the following figure, subdivide the road in front of the vehicle (and to some extend also behind) into "buckets":
 
 ![](./images/Drawing2.png)
 
-
-A second cost function is designed relatively straightforward
+A for-loop iterates over all cars in the proximity of the ego vehicle (these where already pre-filtered in a loop in the `main()`-function) and places them into a bucket.
+Each bucket has a certain cost. For example, cars farer away from the ego-vehicle are given a lower cost, and vehicles in the proximity of the ego vehicle are given a higher cost.
 
 The advantage of this "bucket-approach" seems to be much less dependency on the cost-functions' weight, and therefore less need for fine-tuning. Also, the complexity of the operation is significantly less than other approaches like tracing the trajectories of the target vehicles.
 
 
-
 #### Trajectory Generation
-The Trajectory Class accepts the total time ![](https://latex.codecogs.com/gif.latex?%5CDelta%20T) as input as well as initial and final positions, and initial and final longitudinal velocities. The total time ensures that the mean speed along the interior of the trajectory stays in a range definied by the initial and final velocities. E.g., choosing ![](https://latex.codecogs.com/gif.latex?%5CDelta%20T) relatively large leads to the ego vehicle first decelerating and then accelerating again. Choosing ![](https://latex.codecogs.com/gif.latex?%5CDelta%20T) relatively large leads to the ego vehicle first accelerating and then decelerating again.
+The trajectories are modeled as instances of the `Trajectory`-class. For modeling a jerk-minimizing trajectory, I have utilized quintic polynomials which minimize the functional
+
+![](https://latex.codecogs.com/gif.latex?%5Cint_0%5E%7B%5CDelta%20T%7D%20%5Cleft%7C%5Cdddot%7Bs%7D%28t%29%29%5Cright%7C%5E2%20dt)
+
+and satisfy the boundary conditions as required.
+
+The Trajectory class' constructor accepts values such as the total time ![](https://latex.codecogs.com/gif.latex?%5CDelta%20T)
+as input as well as initial and final positions, and initial and final longitudinal velocities. Note that the final longitudinal velocity is calculated by the state machine using the available traffic data.
+
+The total time ensures that the mean speed along the interior of the trajectory stays in a range defined by the initial and final velocities. E.g., choosing ![](https://latex.codecogs.com/gif.latex?%5CDelta%20T) relatively large leads to the ego vehicle first decelerating and then accelerating again. Choosing ![](https://latex.codecogs.com/gif.latex?%5CDelta%20T) relatively large leads to the ego vehicle first accelerating and then decelerating again.
 
 
 
-#### getXY()-function
-The `getXY()`-function is of critical importance. As described above, it had to be modified in order to become useful.
 
-![](https://latex.codecogs.com/gif.latex?%5C%7B%20P_0%2C%20P_1%2C%20P_2%2C%20P_3%20%5C%7D)
+## Analysis
+### Failed attempts
+Since there were only relatively little guidelines for this project, the students had perhaps more freedom to explore individual solutions than in other projects of the SDC-ND. This lead us to experimenting with several different solutions and eventually abandoning them after several hours of research.
 
-We denote by K_1(t) the spline generated by the three points ![](https://latex.codecogs.com/gif.latex?%5Cinline%20%5Cmathcal%7BK%7D_0%20%3D%20%5C%7B%20P_0%2C%20P_1%2C%20P_2%20%5C%7D)
-(red line in the illustration), and by K_2 the spline generated by
-![](https://latex.codecogs.com/gif.latex?%5Cmathcal%7BK%7D_1%20%3D%20%5C%7B%20P_1%2C%20P_2%2C%20P_3%20%5C%7D) (green line).
-The interpolated line is the blue one.
+**Stochastic trajectory generation**
+By this I mean choosing random endpoints for the trajectories and choosing the one with the lowest costs. The problem with this approach is that while it worked in principle, it has eaten too many computational resources.
+
+**Calculating cost of trajectory**
+I.e. predicting the movement of each target vehicle and calculating collision trajectories. Again, this methods has taken too many CPU cycles. Calculating a few dozen trajectories in advance has taken several seconds.
 
 
-The interpolation algorithm makes use of an interesting idea by fellow *Udacity SDC-ND student* [Piermarco Pascale][1].  He proposed a norm
-However, as his approach is incredibly accurate, it is - due to it's computational complexity - useless for practical purposes. We modified it by exchanging the integration part with splines. For a detailed description of algorithm, cf. the description below.
 
-As for he spline library, we make use of the [library by Tino Kluge][2], as suggested in the lectures. It picks the closest two map points in front of the ego vehicle, and the closest two map points behind it. It then generates two spline curves between the first three points and the last three points.
+## Possible Modifications
+Although the current solution enables the ego vehicle to navigate through the traffic, it is far from optimal. I therefore suggest further modifications:
+
+One possible modification which I have only shortly delved into is the possibility to enable near real-time path planning akin to the MPC project. It seems like this requires some delicate fine-tuning, as the vehicle behaves rather rough when one attempts to modify the trajectory each time the state machine is called from the main-loop.
+
+One state which I wish to add - if such a modification is possible - is an *emergency abort* which returns the vehicle into a safe state (like returning into the original lane) whenever a unforeseen situation arises, e.g. when getting too close to a target vehicle.
+
+
+
+## Comment on the Provided Framework
+Most students I have communicated with share the same opinion that fixing the boilerplate code was quite distracting from the primary objective of developing a reliable path planner. There are at least two main issues which require attention before the path planner can be attacked.
+
+1. Putting the complete code into `main.cpp` seemed to be rather inconvenient for such a relatively complex project. Also, the usage of classes appears rather naturally from the project and using separate files for each class is therefore mandatory.
+
+2. The `getXY()` function for translating *Frenet* into *Cartesian* coordinates was unsuitable for transforming the quintic curve ![](https://latex.codecogs.com/gif.latex?t%5Cmapsto%28s%28t%29%2Cd%28t%29%29) into Cartesian coordinates. Its original implementation relied on a simple linear interpolation between the track's 42 waypoints, which resulted in piecewise polynomial trajectories after a quintic polynomial in Frenet coordinates has been translated into Cartesian coordinates.
+
+**Ad 1.)** First of all, instead of relying on a single `main.cpp`-file, I chose to split the code into several different files. These are (omitting header files):
+
+* `main.cpp`: Contains the main loop which communicates with the simulator.
+* `statemachine.cpp`: Contains the state machine and cost functions.
+* `trajectory.cpp`: Contains the `Trajectory`-class. An instance of `Trajectory` is
+* `common.cpp`: A collection of functions, such as the affine coordinate transformations `global2local()` and `local2global()` which are used when creating splines.
+* `maptool.cpp`: `Maptool`-class which can be considered as a singleton. Its members are useful functions such as `getXY()` and `getFrenet()`.
+
+**Ad 2.)** Development of a new `getXY_spline()` method which targets the non-smoothness issues above. [The section below](#The-getXY-Function) is dedicated to this question.
+
+
+
+## The getXY()-Function
+The `getXY()`-function is of critical importance. As described above, it had to be modified in order to become useful. Our approach is based on the following idea:
+Let ![](https://latex.codecogs.com/gif.latex?%5C%7B%20P_0%2C%20P_1%2C%20P_2%2C%20P_3%20%5C%7D)
+be four adjacent waypoints, where ![](https://latex.codecogs.com/gif.latex?P_3) and ![](https://latex.codecogs.com/gif.latex?P_2) are the next two waypoints in front of the ego vehicle, and ![](https://latex.codecogs.com/gif.latex?P_1) and ![](https://latex.codecogs.com/gif.latex?P_0) the next two behind (cf. the illustration below).
 
 ![](./images/Drawing3.png)
 
-The two splines are not identical in the section between points ![](https://latex.codecogs.com/gif.latex?P_1) and ![](https://latex.codecogs.com/gif.latex?P_2). Let ![](https://latex.codecogs.com/gif.latex?d_1) and ![](https://latex.codecogs.com/gif.latex?d_2) be the s-distance of the car to ![](https://latex.codecogs.com/gif.latex?P_2) and ![](https://latex.codecogs.com/gif.latex?P_1), respectively. In order to find a smooth approximation for the whole track, we define the following weights:
+Denote by ![](https://latex.codecogs.com/gif.latex?K_1) the spline generated by the three points
+![](https://latex.codecogs.com/gif.latex?%20%5C%7B%20P_0%2C%20P_1%2C%20P_2%20%5C%7D)
+(red line in the illustration), and by
+![](https://latex.codecogs.com/gif.latex?K_2)
+the spline generated by
+![](https://latex.codecogs.com/gif.latex?%20%5C%7B%20P_1%2C%20P_2%2C%20P_3%20%5C%7D) (green line).
+
+Note that the two splines are in general not identical in the section between points ![](https://latex.codecogs.com/gif.latex?P_1)
+and
+![](https://latex.codecogs.com/gif.latex?P_2).
+
+The two splines will be interpolated within the interval between these points as follows:
+
+Let ![](https://latex.codecogs.com/gif.latex?d_1) and ![](https://latex.codecogs.com/gif.latex?d_2) be the s-distance of the car to ![](https://latex.codecogs.com/gif.latex?P_2) and ![](https://latex.codecogs.com/gif.latex?P_1), respectively. In order to find a smooth approximation for the whole track, define the following weights:
 
 ![](https://latex.codecogs.com/gif.latex?p%20%3D%20d_2%5E%7B-2%7D) and ![](https://latex.codecogs.com/gif.latex?q%3D%20d_1%5E%7B-2%7D).
 
-We then define further:
+Then define further:
 ![](https://latex.codecogs.com/gif.latex?n%20%3D%20p&plus;q)
 
 The interpolated XY-position is then defined as:
@@ -104,47 +173,35 @@ The interpolation is can be done with new splines ![](https://latex.codecogs.com
 
 
 
-## Analysis
 
-#### Failed attempts
-Since there were only relatively little guidelines for this project,
+The interpolation algorithm makes use of an interesting idea by fellow *Udacity SDC-ND student* [Piermarco Pascale][1].  He proposed a norm
+However, as his approach is incredibly accurate, it is - due to it's computational complexity - useless for practical purposes. I modified it by exchanging the integration part with splines. For a detailed description of algorithm, cf. the description below.
 
-**Stochastic trajectory generation**
-By this we mean choosing random endpoints for the trajectories and choosing the one with the lowest costs. The problem with this approach is that while it worked in principle, it has eaten too many resources.
-
-**Calculating cost of trajectory**
-I.e. predicting the movement of each target vehicle and calculating collision trajectories. Again, this methods has taken too much resources. Calculating a few dozen trajectories takes a few seconds.
+As for he spline library, I make use of the [library by Tino Kluge][2], as suggested in the lectures. It picks the closest two map points in front of the ego vehicle, and the closest two map points behind it. It then generates two spline curves between the first three points and the last three points.
 
 
-
-#### Possible Modifications
-One possible modification which I have only shortly delved into is the possibility to enable near real-time path planning akin to the MPC project.
-
-
-
-#### Comment on the Provided Framework
-Most students I have communicated with share the same opinion that fixing the was quite distracting from the primary objective of
-
-First of all, instead of relying on a single `main.cpp`-file, I chose to split the code into several different files. These are (omitting header files)
-
-* `main.cpp`: Contains the main loop which communicates with
-* `statemachine.cpp`: Contains the state machine and cost functions.
-* `trajectory.cpp`: Contains the `Trajectory`-class. An instance of `Trajectory` is
-* `common.cpp`: A collection of functions, such as the affine coordinate transformations `global2local()` and `local2global()`.
-* `maptool.cpp`: `Maptool`-class which can be considered as a singleton. Its members are useful functions such as `getXY()` and `getFrenet()`.
 
 
 
 
 ## Conclusion
-Although the project was extremely interesting, the largest portion of time had to be dedicated to secondary objectives. These included trying out new architectures for the code, and rewriting helper functions, especially the notorious `getXY()`.
+Although the project was extremely interesting, the largest portion of time had to be dedicated to secondary objectives. These included trying out new architectures for the code and rewriting helper functions, especially the notorious `getXY()`.
 One lesson I have learned is that computational complexity is a huge issue when developing algorithms for self-driving cars. Concepts which have been introduced in the lectures, for example stochastic trajectory generation seem to be unfeasible for usage in the simulator.
 
 At the time of submission, I have not been fully satisfied by the architecture I have developed.
 
+***
 
+*Machine setup:*
+* Intel i5-6500 CPU
+* 16GB RAM
+* Nvidia GTX 1060 GPU, 6GB VRAM
+* Linux Mint 18 (based on Ubuntu 16.04)
+
+
+
+***
 The latex-graphics were generated by https://www.codecogs.com/eqnedit.php.
-
 
 [1]: https://discussions.udacity.com/t/a-more-refined-getxy-function/666827
 [2]: http://kluge.in-chemnitz.de/opensource/spline/
