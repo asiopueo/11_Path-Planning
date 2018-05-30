@@ -34,7 +34,7 @@ StateMachine::~StateMachine() {
 
 
 // Costs due to near-collision with other vehicles
-double StateMachine::cost_function_0(Trajectory &trajectory, const pose egoPose, const targetList_t list, Maptool map)
+double StateMachine::cost_function_traffic(Trajectory &trajectory, const pose egoPose, const targetList_t list, Maptool map)
 {
 	double cost = 0;
 
@@ -85,7 +85,7 @@ double StateMachine::cost_function_0(Trajectory &trajectory, const pose egoPose,
 }
 
 // Costs due to trajectory dynamics
-double StateMachine::cost_function_1(const Trajectory &trajectory, double ds, double dd)
+double StateMachine::cost_function_behavior(const Trajectory &trajectory, double ds, double dd)
 {
 	double cost = 0;
 
@@ -230,10 +230,10 @@ trajectory_t StateMachine::evaluate_behavior(pose egoPose, targetList_t vehicle_
 				traj = Trajectory(egoPose, ds, dd, v_prev, lane_speeds[intended_lane]-1, delta_t);
 
 				// Add cost function for obstacles and road departure 
-				cost_for_state += cost_function_0(traj, egoPose, vehicle_list, maptool);
+				cost_for_state += cost_function_traffic(traj, egoPose, vehicle_list, maptool);
 				
 				// Add cost function for trajectory profile (speed, jerk, etc.)
-				cost_for_state += cost_function_1(traj, ds, dd);
+				cost_for_state += cost_function_behavior(traj, ds, dd);
 
 				//costs[state_iter] = cost_for_state;
 
