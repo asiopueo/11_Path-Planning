@@ -38,14 +38,14 @@ class StateMachine {
 		double s_prev;
 		double v_prev;
 
-		unsigned int current_lane;
-		unsigned int intended_lane;
+		int current_lane;
+		int intended_lane;
 
 		Maptool maptool;
 		
 		std::vector<double> weights;
-		double cost_function_0(Trajectory &, const pose, const targetList_t, Maptool);
-		double cost_function_1(const Trajectory &, double delta_s, double delta_d);
+		double cost_function_traffic(Trajectory &, const pose, const targetList_t, Maptool);
+		double cost_function_behavior(const Trajectory &, double delta_s, double delta_d);
 		std::vector<double> lane_speeds_fct(const pose egoPose, const targetList_t);
 };
 
